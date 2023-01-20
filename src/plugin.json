@@ -1,0 +1,34 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "datasource",
+  "name": "Azion",
+  "id": "azion-azion-datasource",
+  "metrics": true,
+  "annotations": true,
+  "includes": [
+    {
+      "name": "Http Metrics Examples",
+      "path": "dashboards/http-metrics-examples.json",
+      "type": "dashboard"
+    }
+  ],
+  "info": {
+    "description": "Azion Data Source",
+    "author": {
+      "name": "azion"
+    },
+    "keywords": ["datasource", "GraphQL", "Azion", "dashboard"],
+    "logos": {
+      "small": "img/logo_small.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": "^9.2.5",
+    "plugins": []
+  }
+}
