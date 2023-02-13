@@ -1,0 +1,42 @@
+name: Publish version tag
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  HUSKY: 0
+
+jobs:
+  setup-and-publish-tags:
+    runs-on: self-hosted
+    container:
+      image: node:16-alpine3.12
+    permissions: 
+      contents: write
+      packages: write
+      issues: write
+    steps:    
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: "16.x"
+        cache: 'yarn'
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_SECRET }}
+
+    - name: Install dependencies
+      run: yarn ci
+      
+    - name: Build application
+      run: yarn build
+
+    - name: Release tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: yarn semantic-release

@@ -12,6 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
       - uses: actions/checkout@v3
 
       - name: Setup Node.js environment
@@ -20,14 +21,11 @@ jobs:
           node-version: '16'
           cache: 'yarn'
       - name: Install dependencies
-        run: yarn install --immutable --prefer-offline
+        run: yarn ci
 
       - name: Check types
         run: yarn typecheck
-      - name: Lint
-        run: yarn lint
-      # - name: Unit tests 
-      #   run: yarn test:ci
+
       - name: Build frontend
         run: yarn build
 
@@ -39,35 +37,3 @@ jobs:
 
       - name: Stop grafana docker
         run: docker-compose down
-  generate-tags:
-    needs: build
-    name: generate-tags
-    runs-on: self-hosted
-    container:
-      image: node:16-alpine3.12
-    permissions: 
-      contents: write
-      packages: write
-      issues: write
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Setup Node.js environment
-    - uses: actions/setup-node@v3
-      with:
-        node-version: '16'
-        cache: 'yarn'
-
-    - name: Install dependencies
-      run: yarn install --immutable --prefer-offline
-
-    - name: Build application
-      run: yarn build
-      
-    - name: Release to NPM modules
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: yarn semantic-release

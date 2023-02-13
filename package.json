@@ -15,6 +15,7 @@
     "server": "docker-compose up --build",
     "prepare": "npx husky install",
     "sign": "npx --yes @grafana/sign-plugin",
+    "ci": "yarn install --frozen-lockfile",
     "generate-tags": "semantic-release"
   },
   "author": "Azion",
