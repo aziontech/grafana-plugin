@@ -3,11 +3,9 @@ name: CI
 on:
   push:
     branches:
-      - master
       - main
   pull_request:
     branches:
-      - master
       - main
 
 jobs:
@@ -41,31 +39,35 @@ jobs:
 
       - name: Stop grafana docker
         run: docker-compose down
+  generate-tags:
+    needs: build
+    name: generate-tags
+    runs-on: self-hosted
+    container:
+      image: node:16-alpine3.12
+    permissions: 
+      contents: write
+      packages: write
+      issues: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Check for backend
-        id: check-for-backend
-        run: |
-          if [ -f "Magefile.go" ]
-          then
-            echo "has-backend=true" >> $GITHUB_OUTPUT
-          fi
+    - name: Setup Node.js environment
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        cache: 'yarn'
 
-      - name: Setup Go environment
-        if: steps.check-for-backend.outputs.has-backend == 'true'
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.19'
+    - name: Install dependencies
+      run: yarn install --immutable --prefer-offline
 
-      - name: Test backend
-        if: steps.check-for-backend.outputs.has-backend == 'true'
-        uses: magefile/mage-action@v1
-        with:
-          version: latest
-          args: coverage
-
-      - name: Build backend
-        if: steps.check-for-backend.outputs.has-backend == 'true'
-        uses: magefile/mage-action@v1
-        with:
-          version: latest
-          args: buildAll
+    - name: Build application
+      run: yarn build
+      
+    - name: Release to NPM modules
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: yarn semantic-release
