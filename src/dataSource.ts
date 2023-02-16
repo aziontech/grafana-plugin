@@ -81,6 +81,115 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return this.postQuery(query, payload);
   }
 
+  private formatFieldTitle(aliasBy: string, generalReplaceObject: {}, fieldName: string, options: DataQueryRequest<MyQuery>): string {
+    let title: string = aliasBy;
+    const replaceObject: {} = { ...generalReplaceObject };
+    replaceObject['fieldName'] = fieldName;
+
+    for (const replaceKey in replaceObject) {
+      const replaceValue: string = replaceObject[replaceKey];
+      const regex = new RegExp('\\$' + replaceKey, 'g');
+      title = title.replace(regex, replaceValue);
+    }
+
+    return getTemplateSrv().replace(title, options.scopedVars);
+  }
+
+  private setFieldType(fieldName: string, timePath: string, doc: {}): FieldType {
+    if (fieldName === timePath || isRFC3339_ISO6801(String(doc[fieldName]))) {
+      return FieldType.time;
+    }
+    
+    if (_.isNumber(doc[fieldName])) {
+      return FieldType.number;
+    }
+
+    return FieldType.string;
+  }
+
+  private formatIdentifiers(formattedGroupBy: string[], doc: {}): string[] {
+    return formattedGroupBy.map((groupByElement) => doc[groupByElement]);
+  }
+
+  private setFieldTitle(
+    formattedIdentifiers: string[],
+    identifiersString: string, 
+    fieldName: string, 
+    aliasBy: string,
+    generalReplaceObject: {},
+    options: DataQueryRequest<MyQuery>
+    ): string {
+    let title: string;
+
+    if (formattedIdentifiers.length) {
+      title = identifiersString + '_' + fieldName;
+    } else {
+      title = fieldName;
+    }
+
+    if (aliasBy) {
+      title = this.formatFieldTitle(aliasBy, generalReplaceObject, fieldName, options);
+    }
+
+    return title;
+  }
+
+  private formatGroupByList(groupBy: any): string[] {
+    let groupByList: string[] = [];
+    const split: string[] = groupBy.split(',');
+  
+    for(const element of split) {
+      const trimmed = element.trim();
+      if (trimmed) {
+        groupByList.push(trimmed);
+      }
+    }
+
+    return groupByList;
+  } 
+
+  private setGeneralReplacementObject(doc: {}): {} {
+    const generalReplaceObject: {} = {};
+
+    for (const fieldName in doc) {
+      generalReplaceObject['field_' + fieldName] = doc[fieldName];
+    }
+
+    return generalReplaceObject;
+  }
+
+  private addFieldsToMutableDataFrame(
+    doc: {},
+    timePath: string,
+    formattedIdentifiers: string[],
+    identifiersString: string, 
+    aliasBy: string,
+    options: DataQueryRequest<MyQuery>
+    ): MutableDataFrame {
+    const mutableDataFrame = new MutableDataFrame({ fields: [] });
+    const generalReplaceObject = this.setGeneralReplacementObject(doc);
+
+    for (const fieldName in doc) {
+      const fieldType: FieldType = this.setFieldType(fieldName, timePath, doc);
+      const fieldTitle: string = this.setFieldTitle(
+        formattedIdentifiers, 
+        identifiersString, 
+        fieldName, 
+        aliasBy, 
+        generalReplaceObject, 
+        options
+      );
+     
+      mutableDataFrame.addField({
+        name: fieldName,
+        type: fieldType,
+        config: { displayName: fieldTitle },
+      });
+    }
+
+    return mutableDataFrame;
+  }
+
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
     return Promise.all(
       options.targets.map((target) => {
@@ -91,14 +200,9 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       for (let res of results) {
         const dataPathArray: string[] = DataSource.getDataPathArray(res.query.dataPath);
         const { timePath, timeFormat, groupBy, aliasBy } = res.query;
-        const split = groupBy.split(',');
-        const groupByList: string[] = [];
-        for (const element of split) {
-          const trimmed = element.trim();
-          if (trimmed) {
-            groupByList.push(trimmed);
-          }
-        }
+        
+        const formattedGroupBy = this.formatGroupByList(groupBy);
+        
         for (const dataPath of dataPathArray) {
           const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
 
@@ -107,55 +211,19 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
             if (timePath in doc) {
               doc[timePath] = dateTime(doc[timePath], timeFormat);
             }
-            const identifiers: string[] = [];
-            for (const groupByElement of groupByList) {
-              identifiers.push(doc[groupByElement]);
-            }
-            const identifiersString = identifiers.toString();
+
+            const formattedIdentifiers = this.formatIdentifiers(formattedGroupBy, doc);
+            const identifiersString = formattedIdentifiers.toString();
+
             let dataFrame = dataFrameMap.get(identifiersString);
+
             if (!dataFrame) {
               // we haven't initialized the dataFrame for this specific identifier that we group by yet
-              dataFrame = new MutableDataFrame({ fields: [] });
-              const generalReplaceObject: any = {};
-              for (const fieldName in doc) {
-                generalReplaceObject['field_' + fieldName] = doc[fieldName];
-              }
-              for (const fieldName in doc) {
-                let t: FieldType = FieldType.string;
-                if (fieldName === timePath || isRFC3339_ISO6801(String(doc[fieldName]))) {
-                  t = FieldType.time;
-                } else if (_.isNumber(doc[fieldName])) {
-                  t = FieldType.number;
-                }
-                let title;
-                if (identifiers.length !== 0) {
-                  // if we have any identifiers
-                  title = identifiersString + '_' + fieldName;
-                } else {
-                  title = fieldName;
-                }
-                if (aliasBy) {
-                  title = aliasBy;
-                  const replaceObject = { ...generalReplaceObject };
-                  replaceObject['fieldName'] = fieldName;
-                  for (const replaceKey in replaceObject) {
-                    const replaceValue = replaceObject[replaceKey];
-                    const regex = new RegExp('\\$' + replaceKey, 'g');
-                    title = title.replace(regex, replaceValue);
-                  }
-                  title = getTemplateSrv().replace(title, options.scopedVars);
-                }
-                // const dataFrameParse = dataFrame.addField({
-                dataFrame.addField({
-                  name: fieldName,
-                  type: t,
-                  config: { displayName: title },
-                })
-                // dataFrame.setParser( dataFrameParse, (v: any) => {
-                //   return v || '';
-                // });
-              }
-              dataFrameMap.set(identifiersString, dataFrame);
+              const mutableDataFrame = this.addFieldsToMutableDataFrame(
+                doc, timePath, formattedIdentifiers, identifiersString, aliasBy, options
+              );
+              
+              dataFrameMap.set(identifiersString, mutableDataFrame);
             }
 
             dataFrame.add(doc);
