@@ -83,7 +83,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
 
   private formatFieldTitle(aliasBy: string, generalReplaceObject: {}, fieldName: string, options: DataQueryRequest<MyQuery>): string {
     let title: string = aliasBy;
-    const replaceObject: {} = { ...generalReplaceObject };
+    const replaceObject: any = { ...generalReplaceObject };
     replaceObject['fieldName'] = fieldName;
 
     for (const replaceKey in replaceObject) {
@@ -95,7 +95,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return getTemplateSrv().replace(title, options.scopedVars);
   }
 
-  private setFieldType(fieldName: string, timePath: string, doc: {}): FieldType {
+  private setFieldType(fieldName: string, timePath: string, doc: any): FieldType {
     if (fieldName === timePath || isRFC3339_ISO6801(String(doc[fieldName]))) {
       return FieldType.time;
     }
@@ -107,7 +107,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return FieldType.string;
   }
 
-  private formatIdentifiers(formattedGroupBy: string[], doc: {}): string[] {
+  private formatIdentifiers(formattedGroupBy: string[], doc: any): string[] {
     return formattedGroupBy.map((groupByElement) => doc[groupByElement]);
   }
 
@@ -148,8 +148,8 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return groupByList;
   } 
 
-  private setGeneralReplacementObject(doc: {}): {} {
-    const generalReplaceObject: {} = {};
+  private setGeneralReplacementObject(doc: any): {} {
+    const generalReplaceObject: any = {};
 
     for (const fieldName in doc) {
       generalReplaceObject['field_' + fieldName] = doc[fieldName];
@@ -207,6 +207,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
           const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
 
           const dataFrameMap = new Map<string, MutableDataFrame>();
+
           for (const doc of docs) {
             if (timePath in doc) {
               doc[timePath] = dateTime(doc[timePath], timeFormat);
@@ -226,7 +227,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
               dataFrameMap.set(identifiersString, mutableDataFrame);
             }
 
-            dataFrame.add(doc);
+            dataFrame?.add(doc);
           }
           for (const dataFrame of dataFrameMap.values()) {
             dataFrameArray.push(dataFrame);
