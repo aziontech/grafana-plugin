@@ -1,12 +1,46 @@
-name: Release
+name: Publish version tag
 
 on:
-  push:
-    tags:
-      - 'v*' # Run workflow on version tags, e.g. v1.0.0.
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+env:
+  HUSKY: 0
 
 jobs:
+  publish-tags:
+    runs-on: ubuntu-latest
+    
+    container:
+      image: node:16-alpine3.16
+    permissions: 
+      contents: write
+      packages: write
+      issues: write
+    env:
+      GITHUB_TOKEN: ${{ env.GH_TOKEN }}
+    steps:    
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: "16.x"
+        cache: 'yarn'
+
+    - name: Install dependencies
+      run: yarn ci
+      
+    - name: Build application
+      run: yarn build
+
+    - name: generate
+      run: yarn semantic-release
+      
   release:
+    needs: publish-tags
     runs-on: ubuntu-latest
     env:
       GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }} # Requires a Grafana API key from Grafana.com.
@@ -16,7 +50,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '16.x'
           cache: 'yarn'
 
       - name: Setup Go environment
@@ -25,7 +59,7 @@ jobs:
           go-version: '1.19'
 
       - name: Install dependencies
-        run: yarn install --immutable --prefer-offline
+        run: yarn ci
 
       - name: Build and test frontend
         run: yarn build

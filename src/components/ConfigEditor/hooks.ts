@@ -27,6 +27,7 @@ export function useChangeSecureOptions(props: EditorProps, propertyName: keyof B
 
     return useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
+            event.target.value = event.target.value.replace(startValue, '')
             onOptionsChange({
                 ...options,
                 secureJsonData: {

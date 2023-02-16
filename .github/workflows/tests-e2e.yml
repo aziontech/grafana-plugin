@@ -1,4 +1,4 @@
-name: Run Linters
+name: Run E2E Tests
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ env:
     HUSKY: 0
 
 jobs:
-  eslint:
+  run-tests:
     runs-on: ubuntu-latest
     container:
       image: node:16-alpine3.16
@@ -21,19 +21,32 @@ jobs:
 
     - name: Install SO deps
       run: apk add curl bash
+    
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.x'
+        cache: 'yarn'
 
     - uses: actions/cache@v2
       with:
         path: '**/node_modules'
         key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
-    - uses: actions/setup-node@v3
-      with:
-        node-version: '16.x'
-        cache: 'yarn'
-
     - name: Install packages
       run: yarn ci
 
-    - name: Run eslint
-      run: yarn lint
+    - name: Check types
+      run: yarn typecheck
+
+    - name: Build frontend
+      run: yarn build
+
+    - name: Start grafana docker
+      run: yarn server -d
+
+    - name: Run e2e tests
+      run: yarn e2e
+
+    - name: Stop grafana docker
+      run: docker-compose down
