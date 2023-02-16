@@ -46,4 +46,15 @@ jobs:
 
       - name: Build application
         run: yarn build
+        
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.S3_AZTECHJS_ID }}
+          aws-secret-access-key: ${{ secrets.S3_AZTECHJS_KEY }}
+          aws-region: us-east-1
+
+      - name: Upload to S3 (Stage)
+        run: |
+          aws s3 cp --recursive --exclude "*" --include "*"  storybook-static/  s3://aztechjs/stage/design-system
       
