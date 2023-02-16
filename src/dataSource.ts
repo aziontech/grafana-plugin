@@ -159,7 +159,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   }
 
   private addFieldsToMutableDataFrame(
-    doc: {},
+    doc: any,
     timePath: string,
     formattedIdentifiers: string[],
     identifiersString: string, 
