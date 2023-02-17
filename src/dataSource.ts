@@ -112,10 +112,10 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return FieldType.string;
   }
 
-  private formatGroupByList(groupBy: any): string[] {
-    const split: string[] = groupBy.split(',');
-    
-    return split.filter((element) => element.trim());
+  private formatGroupByList(groupBy: string): string[] {
+    const splitGrouping: string[] = groupBy.split(',');
+
+    return splitGrouping.filter((grouping) => grouping.trim());
   } 
 
   private formatIdentifiers(formattedGroupBy: string[], doc: any): string[] {
