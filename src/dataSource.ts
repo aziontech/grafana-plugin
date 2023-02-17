@@ -148,7 +148,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return groupByList;
   } 
 
-  private setGeneralReplacementObject(doc: any): {} {
+  private setValuesToGeneralReplacementObject(doc: any): {} {
     const generalReplaceObject: any = {};
 
     for (const fieldName in doc) {
@@ -167,7 +167,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     options: DataQueryRequest<MyQuery>
     ): MutableDataFrame {
     const mutableDataFrame = new MutableDataFrame({ fields: [] });
-    const generalReplaceObject = this.setGeneralReplacementObject(doc);
+    const generalReplaceObject = this.setValuesToGeneralReplacementObject(doc);
 
     for (const fieldName in doc) {
       const fieldType: FieldType = this.setFieldType(fieldName, timePath, doc);
@@ -190,50 +190,85 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return mutableDataFrame;
   }
 
+  private addDocToDataFrame(
+    docs: any[], 
+    dataFrameMap: Map<string, MutableDataFrame<any>>, 
+    timePath: string, 
+    timeFormat: string,
+    formattedGroupBy: string[],
+    aliasBy: string,
+    options: DataQueryRequest<MyQuery>
+  ): void {
+    for (const doc of docs) {
+      if (timePath in doc) {
+        doc[timePath] = dateTime(doc[timePath], timeFormat);
+      }
+
+      const formattedIdentifiers = this.formatIdentifiers(formattedGroupBy, doc);
+      const identifiersString = formattedIdentifiers.toString();
+
+      let dataFrame = dataFrameMap.get(identifiersString);
+
+      if (!dataFrame) {
+        // we haven't initialized the dataFrame for this specific identifier that we group by yet
+        const mutableDataFrame = this.addFieldsToMutableDataFrame(
+          doc, timePath, formattedIdentifiers, identifiersString, aliasBy, options
+        );
+        
+        dataFrameMap.set(identifiersString, mutableDataFrame);
+      }
+
+      dataFrame?.add(doc);
+    }
+  }
+
+  private addDataFramesToDataFrameMapValues(
+    dataFrameMap: Map<string, MutableDataFrame<any>>,
+    dataFrameArray: DataFrame[]
+  ): void {
+    for (const dataFrame of dataFrameMap.values()) {
+      dataFrameArray.push(dataFrame);
+    }
+  }
+
+  private getPopulatedDataFrameArray(results: any, options: any): DataFrame[] {
+    const dataFrameArray: DataFrame[] = [];
+
+    for (let res of results) {
+      const dataPathArray: string[] = DataSource.getDataPathArray(res.query.dataPath);
+      const { timePath, timeFormat, groupBy, aliasBy } = res.query;
+      
+      const formattedGroupBy = this.formatGroupByList(groupBy);
+      
+      for (const dataPath of dataPathArray) {
+        const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
+
+        const dataFrameMap = new Map<string, MutableDataFrame>();
+
+        this.addDocToDataFrame(
+          docs, 
+          dataFrameMap, 
+          timePath, 
+          timeFormat, 
+          formattedGroupBy, 
+          aliasBy, 
+          options
+        );
+
+        this.addDataFramesToDataFrameMapValues(dataFrameMap, dataFrameArray);
+      }
+    }
+
+    return dataFrameArray;
+  }
+
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
     return Promise.all(
       options.targets.map((target) => {
         return this.createQuery(defaults(target, defaultQuery), options.range, options.scopedVars);
       })
     ).then((results: any) => {
-      const dataFrameArray: DataFrame[] = [];
-      for (let res of results) {
-        const dataPathArray: string[] = DataSource.getDataPathArray(res.query.dataPath);
-        const { timePath, timeFormat, groupBy, aliasBy } = res.query;
-        
-        const formattedGroupBy = this.formatGroupByList(groupBy);
-        
-        for (const dataPath of dataPathArray) {
-          const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
-
-          const dataFrameMap = new Map<string, MutableDataFrame>();
-
-          for (const doc of docs) {
-            if (timePath in doc) {
-              doc[timePath] = dateTime(doc[timePath], timeFormat);
-            }
-
-            const formattedIdentifiers = this.formatIdentifiers(formattedGroupBy, doc);
-            const identifiersString = formattedIdentifiers.toString();
-
-            let dataFrame = dataFrameMap.get(identifiersString);
-
-            if (!dataFrame) {
-              // we haven't initialized the dataFrame for this specific identifier that we group by yet
-              const mutableDataFrame = this.addFieldsToMutableDataFrame(
-                doc, timePath, formattedIdentifiers, identifiersString, aliasBy, options
-              );
-              
-              dataFrameMap.set(identifiersString, mutableDataFrame);
-            }
-
-            dataFrame?.add(doc);
-          }
-          for (const dataFrame of dataFrameMap.values()) {
-            dataFrameArray.push(dataFrame);
-          }
-        }
-      }
+      const dataFrameArray: DataFrame[] = this.getPopulatedDataFrameArray(results, options);
       return { data: dataFrameArray };
     });
   }
@@ -247,14 +282,14 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       }
     }
     if (!dataPathArray) {
-      throw 'data path is empty!';
+      throw new Error('data path is empty!');
     }
     return dataPathArray;
   }
 
   private static getDocs(resultsData: any, dataPath: string): any[] {
     if (!resultsData) {
-      throw 'resultsData was null or undefined';
+      throw new Error('resultsData was null or undefined');
     }
     let data = dataPath.split('.').reduce((d: any, p: any) => {
       if (!d) {
@@ -267,7 +302,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       if (errors && errors.length !== 0) {
         throw errors[0];
       }
-      throw 'Your data path did not exist! dataPath: ' + dataPath;
+      throw new Error('Your data path did not exist! dataPath: ' + dataPath);
     }
     if (resultsData.errors) {
       // There can still be errors even if there is data
