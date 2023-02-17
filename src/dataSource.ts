@@ -81,7 +81,12 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return this.postQuery(query, payload);
   }
 
-  private formatFieldTitle(aliasBy: string, generalReplaceObject: {}, fieldName: string, options: DataQueryRequest<MyQuery>): string {
+  private formatFieldTitle(
+    aliasBy: string, 
+    generalReplaceObject: {}, 
+    fieldName: string, 
+    options: DataQueryRequest<MyQuery>
+  ): string {
     let title: string = aliasBy;
     const replaceObject: any = { ...generalReplaceObject };
     replaceObject['fieldName'] = fieldName;
@@ -107,8 +112,32 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return FieldType.string;
   }
 
+  private formatGroupByList(groupBy: any): string[] {
+    let groupByList: string[] = [];
+    const split: string[] = groupBy.split(',');
+  
+    for(const element of split) {
+      const trimmed = element.trim();
+      if (trimmed) {
+        groupByList.push(trimmed);
+      }
+    }
+
+    return groupByList;
+  } 
+
   private formatIdentifiers(formattedGroupBy: string[], doc: any): string[] {
     return formattedGroupBy.map((groupByElement) => doc[groupByElement]);
+  }
+
+  private setValuesToGeneralReplacementObject(doc: any): {} {
+    const generalReplaceObject: any = {};
+
+    for (const fieldName in doc) {
+      generalReplaceObject['field_' + fieldName] = doc[fieldName];
+    }
+
+    return generalReplaceObject;
   }
 
   private setFieldTitle(
@@ -132,30 +161,6 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     }
 
     return title;
-  }
-
-  private formatGroupByList(groupBy: any): string[] {
-    let groupByList: string[] = [];
-    const split: string[] = groupBy.split(',');
-  
-    for(const element of split) {
-      const trimmed = element.trim();
-      if (trimmed) {
-        groupByList.push(trimmed);
-      }
-    }
-
-    return groupByList;
-  } 
-
-  private setValuesToGeneralReplacementObject(doc: any): {} {
-    const generalReplaceObject: any = {};
-
-    for (const fieldName in doc) {
-      generalReplaceObject['field_' + fieldName] = doc[fieldName];
-    }
-
-    return generalReplaceObject;
   }
 
   private addFieldsToMutableDataFrame(
@@ -190,6 +195,15 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return mutableDataFrame;
   }
 
+  private addDataFramesToDataFrameMapValues(
+    dataFrameMap: Map<string, MutableDataFrame<any>>,
+    dataFrameArray: DataFrame[]
+  ): void {
+    for (const dataFrame of dataFrameMap.values()) {
+      dataFrameArray.push(dataFrame);
+    }
+  }
+
   private addDocToDataFrame(
     docs: any[], 
     dataFrameMap: Map<string, MutableDataFrame<any>>, 
@@ -211,23 +225,14 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
 
       if (!dataFrame) {
         // we haven't initialized the dataFrame for this specific identifier that we group by yet
-        const mutableDataFrame = this.addFieldsToMutableDataFrame(
+        dataFrame = this.addFieldsToMutableDataFrame(
           doc, timePath, formattedIdentifiers, identifiersString, aliasBy, options
         );
         
-        dataFrameMap.set(identifiersString, mutableDataFrame);
+        dataFrameMap.set(identifiersString, dataFrame);
       }
 
-      dataFrame?.add(doc);
-    }
-  }
-
-  private addDataFramesToDataFrameMapValues(
-    dataFrameMap: Map<string, MutableDataFrame<any>>,
-    dataFrameArray: DataFrame[]
-  ): void {
-    for (const dataFrame of dataFrameMap.values()) {
-      dataFrameArray.push(dataFrame);
+      dataFrame.add(doc);
     }
   }
 
