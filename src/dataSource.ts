@@ -21,7 +21,7 @@ import {
   defaultQuery,
   MyVariableQuery,
   MultiValueVariable,
-  TextValuePair,
+  DataSourceVariable,
 } from './types';
 import { getTemplateSrv, getBackendSrv } from '@grafana/runtime';
 
@@ -30,8 +30,6 @@ import {
   flatten,
   isRFC3339_ISO6801,
 } from './util';
-
-const supportedVariableTypes = ['constant', 'custom', 'query', 'textbox'];
 
 export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   url: string | undefined;
@@ -325,6 +323,31 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return metricFindValues;
   }
 
+  private hasSupportedVariableType(variableType: string): boolean {
+    const supportedVariableTypes = ['constant', 'custom', 'query', 'textbox'];
+    const hasSupportedType = supportedVariableTypes.includes(variableType);
+    
+    if (!hasSupportedType) {
+      console.warn(`Variable of type "${variableType}" is not supported`);
+    }
+
+    return hasSupportedType;
+  }
+
+  private formatDataSourceVariableValue(supportedVariable: MultiValueVariable): any {
+    let variableValue = supportedVariable.current.value;
+
+    if (variableValue === '$__all' || _.isEqual(variableValue, ['$__all'])) {
+      if (!!supportedVariable.allValue) {
+        variableValue = supportedVariable.options.slice(1).map((textValuePair) => textValuePair.value);
+      } else {
+        variableValue = supportedVariable.allValue;
+      }
+    }
+
+    return variableValue;
+  }
+
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
     return Promise.all(
       options.targets.map((target) => {
@@ -425,31 +448,21 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     });
   }
 
-  getVariables() {
-    const variables: { [id: string]: TextValuePair } = {};
+  getVariables(): DataSourceVariable {
+    const variables: DataSourceVariable = {};
+    
     Object.values(getTemplateSrv().getVariables()).forEach((variable) => {
-      if (!supportedVariableTypes.includes(variable.type)) {
-        console.warn(`Variable of type "${variable.type}" is not supported`);
-
-        return;
-      }
+      if (!this.hasSupportedVariableType(variable.type)) { return; }
 
       const supportedVariable = variable as MultiValueVariable;
-
-      let variableValue = supportedVariable.current.value;
-      if (variableValue === '$__all' || _.isEqual(variableValue, ['$__all'])) {
-        if (supportedVariable.allValue === null || supportedVariable.allValue === '') {
-          variableValue = supportedVariable.options.slice(1).map((textValuePair) => textValuePair.value);
-        } else {
-          variableValue = supportedVariable.allValue;
-        }
-      }
+      const formattedVariableValue = this.formatDataSourceVariableValue(supportedVariable);
 
       variables[supportedVariable.id] = {
         text: supportedVariable.current.text,
-        value: variableValue,
+        value: formattedVariableValue,
       };
     });
+    
     return variables;
   }
 }
