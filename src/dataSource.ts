@@ -324,8 +324,8 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   }
 
   private hasSupportedVariableType(variableType: string): boolean {
-    const supportedVariableTypes = ['constant', 'custom', 'query', 'textbox'];
-    const hasSupportedType = supportedVariableTypes.includes(variableType);
+    const supportedVariableTypes: string[] = ['constant', 'custom', 'query', 'textbox'];
+    const hasSupportedType: boolean = supportedVariableTypes.includes(variableType);
     
     if (!hasSupportedType) {
       console.warn(`Variable of type "${variableType}" is not supported`);
@@ -335,7 +335,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   }
 
   private formatDataSourceVariableValue(supportedVariable: MultiValueVariable): any {
-    let variableValue = supportedVariable.current.value;
+    let variableValue: any = supportedVariable.current.value;
 
     if (variableValue === '$__all' || _.isEqual(variableValue, ['$__all'])) {
       if (!!supportedVariable.allValue) {
@@ -462,7 +462,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
         value: formattedVariableValue,
       };
     });
-    
+
     return variables;
   }
 }
