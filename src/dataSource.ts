@@ -259,17 +259,6 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return dataFrameArray;
   }
 
-  async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
-    return Promise.all(
-      options.targets.map((target) => {
-        return this.createQuery(defaults(target, defaultQuery), options.range, options.scopedVars);
-      })
-    ).then((results: any) => {
-      const dataFrameArray: DataFrame[] = this.getPopulatedDataFrameArray(results, options);
-      return { data: dataFrameArray };
-    });
-  }
-
   private static getDataPathArray(dataPathString: string): string[] {
     const dataPathArray: string[] = [];
     for (const dataPath of dataPathString.split(',')) {
@@ -320,6 +309,33 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return docs;
   }
 
+  private getPopulatedMetricFindValuesArray(docs: any[]): MetricFindValue[] {
+    const metricFindValues: MetricFindValue[] = [];
+
+    for (const doc of docs) {
+      if ('__text' in doc && '__value' in doc) {
+        metricFindValues.push({ text: doc['__text'], value: doc['__value'] });
+      } else {
+        for (const fieldName in doc) {
+          metricFindValues.push({ text: doc[fieldName] });
+        }
+      }
+    }
+
+    return metricFindValues;
+  }
+
+  async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
+    return Promise.all(
+      options.targets.map((target) => {
+        return this.createQuery(defaults(target, defaultQuery), options.range, options.scopedVars);
+      })
+    ).then((results: any) => {
+      const dataFrameArray: DataFrame[] = this.getPopulatedDataFrameArray(results, options);
+      return { data: dataFrameArray };
+    });
+  }
+
   testDatasource() {
     const q = `{
       __schema{
@@ -348,9 +364,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     );
   }
 
-  async metricFindQuery(query: MyVariableQuery, options?: any) {
-    const metricFindValues: MetricFindValue[] = [];
-
+  async metricFindQuery(query: MyVariableQuery) {
     query = defaults(query, defaultQuery);
 
     let payload = query.queryText;
@@ -360,17 +374,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
 
     const docs: any[] = DataSource.getDocs(response.results.data, query.dataPath);
 
-    for (const doc of docs) {
-      if ('__text' in doc && '__value' in doc) {
-        metricFindValues.push({ text: doc['__text'], value: doc['__value'] });
-      } else {
-        for (const fieldName in doc) {
-          metricFindValues.push({ text: doc[fieldName] });
-        }
-      }
-    }
-
-    return metricFindValues;
+    return this.getPopulatedMetricFindValuesArray(docs);
   }
 
   annotationQuery(options: any): Promise<AnnotationEvent[]> {
