@@ -387,7 +387,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     );
   }
 
-  async metricFindQuery(query: MyVariableQuery) {
+  async metricFindQuery(query: MyVariableQuery): Promise<MetricFindValue[]> {
     query = defaults(query, defaultQuery);
 
     let payload = query.queryText;
