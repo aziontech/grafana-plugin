@@ -22,6 +22,7 @@ import {
   MyVariableQuery,
   MultiValueVariable,
   DataSourceVariable,
+  AnnotationQueryProps,
 } from './types';
 import { getTemplateSrv, getBackendSrv } from '@grafana/runtime';
 
@@ -348,6 +349,80 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return variableValue;
   }
 
+  private formatAnnotationQueryProps(query: any, doc: any): AnnotationQueryProps {
+    let title = query.annotationTitle;
+    let text = query.annotationText;
+    let tags = query.annotationTags;
+
+    // Strange loop. Gotta check why it's needed
+
+    for (const fieldName in doc) {
+      const fieldValue = doc[fieldName];
+      const replaceKey = 'field_' + fieldName;
+      const regex = new RegExp('\\$' + replaceKey, 'g');
+      title = title.replace(regex, fieldValue);
+      text = text.replace(regex, fieldValue);
+      tags = tags.replace(regex, fieldValue);
+    }
+
+    return {
+      title,
+      text,
+      tags
+    };
+  }
+
+  private formatAnnotationTags(tags: string): string[] {
+    const splitTags: string[] = tags.split(',');
+
+    return splitTags.filter((tag) => tag.trim());
+  } 
+
+  private populateAnnotationEventList(
+    docs: any[],
+    result: any,
+    query: any,
+    annotationEventList: AnnotationEvent[]
+    ): void {
+    const { timePath, endTimePath, timeFormat } = result.query;
+
+    for (const doc of docs) {
+      const annotation: AnnotationEvent = {};
+      if (timePath in doc) {
+        annotation.time = dateTime(doc[timePath], timeFormat).valueOf();
+      }
+      if (endTimePath in doc) {
+        annotation.isRegion = true;
+        annotation.timeEnd = dateTime(doc[endTimePath], timeFormat).valueOf();
+      }
+
+      const {title, text, tags } = this.formatAnnotationQueryProps(query, docs);
+
+      annotation.title = title;
+      annotation.text = text;
+      annotation.tags = this.formatAnnotationTags(tags);
+
+      annotationEventList.push(annotation);
+    }
+  }
+
+  private getPopulatedAnnotationEventList(query: any, results: any): AnnotationEvent[] {
+    const annotationEventList: AnnotationEvent[] = [];
+
+    for (const result of results) {
+      const { data } = result.results
+      const { dataPath: dataPathFromQuery } = result.query;
+      const dataPathArray: string[] = DataSource.getDataPathArray(dataPathFromQuery);
+      
+      for (const dataPath of dataPathArray) {
+        const docs: any[] = DataSource.getDocs(data, dataPath);
+        this.populateAnnotationEventList(docs, result, query, annotationEventList)
+      }
+    }
+
+    return annotationEventList;
+  }
+
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
     return Promise.all(
       options.targets.map((target) => {
@@ -400,51 +475,10 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return this.getPopulatedMetricFindValuesArray(docs);
   }
 
-  annotationQuery(options: any): Promise<AnnotationEvent[]> {
+  async annotationQuery(options: any): Promise<AnnotationEvent[]> {
     const query = defaults(options.annotation, defaultQuery);
     return Promise.all([this.createQuery(query, options.range)]).then((results: any) => {
-      const r: AnnotationEvent[] = [];
-      for (const res of results) {
-        const { timePath, endTimePath, timeFormat } = res.query;
-        const dataPathArray: string[] = DataSource.getDataPathArray(res.query.dataPath);
-        for (const dataPath of dataPathArray) {
-          const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
-          for (const doc of docs) {
-            const annotation: AnnotationEvent = {};
-            if (timePath in doc) {
-              annotation.time = dateTime(doc[timePath], timeFormat).valueOf();
-            }
-            if (endTimePath in doc) {
-              annotation.isRegion = true;
-              annotation.timeEnd = dateTime(doc[endTimePath], timeFormat).valueOf();
-            }
-            let title = query.annotationTitle;
-            let text = query.annotationText;
-            let tags = query.annotationTags;
-            for (const fieldName in doc) {
-              const fieldValue = doc[fieldName];
-              const replaceKey = 'field_' + fieldName;
-              const regex = new RegExp('\\$' + replaceKey, 'g');
-              title = title.replace(regex, fieldValue);
-              text = text.replace(regex, fieldValue);
-              tags = tags.replace(regex, fieldValue);
-            }
-
-            annotation.title = title;
-            annotation.text = text;
-            const tagsList: string[] = [];
-            for (const element of tags.split(',')) {
-              const trimmed = element.trim();
-              if (trimmed) {
-                tagsList.push(trimmed);
-              }
-            }
-            annotation.tags = tagsList;
-            r.push(annotation);
-          }
-        }
-      }
-      return r;
+      return this.getPopulatedAnnotationEventList(query, results);
     });
   }
 
