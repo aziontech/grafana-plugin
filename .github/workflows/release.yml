@@ -19,8 +19,6 @@ jobs:
       contents: write
       packages: write
       issues: write
-    env:
-      GITHUB_TOKEN: ${{ env.GH_TOKEN }}
     steps:    
     - name: Checkout code
       uses: actions/checkout@v3
@@ -32,18 +30,11 @@ jobs:
 
     - name: Install dependencies
       run: yarn ci
-      
-    - name: Build application
-      run: yarn build
 
-    - name: generate
-      run: yarn semantic-release
+    - name: generate tag
       env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN_TEMP }}
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN_TEMP }}
-        NPM_TOKEN: ${{ secrets.GH_TOKEN_TEMP }}
-        NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN_TEMP }}}  
-      
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: yarn semantic-release
   release:
     needs: publish-tags
     runs-on: ubuntu-latest
