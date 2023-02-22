@@ -51,7 +51,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return getBackendSrv().datasourceRequest(options);
   }
 
-  private postQuery(query: Partial<MyQuery>, payload: string) {
+  private async postQuery(query: Partial<MyQuery>, payload: string) {
     return this.request(payload)
       .then((results: any) => {
         return { query, results };
