@@ -1,5 +1,6 @@
 import defaults from 'lodash/defaults';
-
+import { getTemplateSrv, getBackendSrv, FetchResponse } from '@grafana/runtime';
+import _ from 'lodash';
 import {
   AnnotationEvent,
   DataQueryRequest,
@@ -14,7 +15,6 @@ import {
   FieldType,
   DataFrame,
 } from '@grafana/data';
-
 import {
   MyQuery,
   BasicDataSourceOptions,
@@ -24,9 +24,6 @@ import {
   DataSourceVariable,
   AnnotationQueryProps,
 } from './types';
-import { getTemplateSrv, getBackendSrv } from '@grafana/runtime';
-
-import _ from 'lodash';
 import {
   flatten,
   isRFC3339_ISO6801,
@@ -40,7 +37,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     this.url = instanceSettings.url;
   }
 
-  private request(data: string) {
+  private request(data: string): Promise<FetchResponse<any>> {
     const options: any = {
       url: this.url,
       method: 'POST',
@@ -51,7 +48,10 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return getBackendSrv().datasourceRequest(options);
   }
 
-  private async postQuery(query: Partial<MyQuery>, payload: string) {
+  private async postQuery(
+    query: Partial<MyQuery>,
+    payload: string
+  ): Promise<{query: Partial<MyQuery>; results: any;}> {
     return this.request(payload)
       .then((results: any) => {
         return { query, results };
@@ -70,7 +70,11 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       });
   }
 
-  private createQuery(query: MyQuery, range: TimeRange | undefined, scopedVars: ScopedVars | undefined = undefined) {
+  private createQuery(
+    query: MyQuery,
+    range: TimeRange | undefined,
+    scopedVars: ScopedVars | undefined = undefined
+  ): Promise<{query: Partial<MyQuery>; results: any;}> {
     let payload = getTemplateSrv().replace(query.queryText, {
       ...scopedVars,
       timeFrom: { text: 'from', value: range?.from.valueOf() },
@@ -432,7 +436,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     });
   }
 
-  testDatasource() {
+  testDatasource(): Promise<{status: string; message: string;}> {
     const q = `{
       __schema{
         queryType{name}
