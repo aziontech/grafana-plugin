@@ -1,73 +1,130 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title></title>
 </head>
-
 <body>
   <div class="gf-form-group">
     <div class="gf-form">
-      <textarea type="text" class="gf-form-input" ng-model=
-      'ctrl.annotation.queryText' placeholder="GraphQL Query">
-query {
-    data:submissions(user:"$user", from:"$timeFrom", to:"$timeTo"){
-        Time:submitTime
-        idle running completed
-    }
-}
-</textarea>
+      <textarea 
+        type="text"
+        class="gf-form-input" 
+        ng-model='ctrl.annotation.queryText' 
+        placeholder="GraphQL Query"
+      >
+        query {
+          data:submissions(user:"$user", from:"$timeFrom", to:"$timeTo"){
+              Time:submitTime
+              idle running completed
+          }
+        }
+      </textarea>
     </div>
 
     <div class="gf-form">
-      <label class="gf-form-label width-7" title=
-      "Data path (comma separated for multiple data paths)">Data
-      Path</label> <input type="text" class="gf-form-input"
-      ng-model='ctrl.annotation.dataPath' placeholder="data" value=
-      "data">
+      <label 
+        class="gf-form-label width-7" 
+        title="Data path (comma separated for multiple data paths)"
+      >Data Path
+      </label>
+      <input 
+        type="text" 
+        class="gf-form-input"
+        ng-model='ctrl.annotation.dataPath'
+        placeholder="data"
+        value="data"
+      >
     </div>
 
     <div class="gf-form">
-      <label class="gf-form-label width-7" title=
-      "Time path under data path">Time Path</label> <input type=
-      "text" class="gf-form-input" ng-model=
-      'ctrl.annotation.timePath' placeholder="Time" value="Time">
+      <label class="gf-form-label width-7" 
+        title="Time path under data path"
+      >Time Path
+      </label>
+      <input 
+        type="text" 
+        class="gf-form-input" 
+        ng-model='ctrl.annotation.timePath'
+        placeholder="Time"
+        value="Time"
+      >
     </div>
 
     <div class="gf-form">
-      <label class="gf-form-label width-7" title=
-      "Optional end time path under data path">End Time
-      Path</label> <input type="text" class="gf-form-input"
-      ng-model='ctrl.annotation.endTimePath' placeholder="TimeEnd"
-      value="TimeEnd">
+      <label 
+        class="gf-form-label width-7" 
+        title="Optional end time path under data path"
+      >End Time Path
+      </label>
+      <input 
+        type="text"
+        class="gf-form-input"
+        ng-model='ctrl.annotation.endTimePath'
+        placeholder="TimeEnd"
+        value="TimeEnd"
+      >
     </div>
 
     <div class="gf-form">
-      <label class="gf-form-label width-7" title=
-      "Optional time format">Time Format</label> <input type="text"
-      class="gf-form-input" ng-model='ctrl.annotation.timeFormat'
-      value="">
+      <label 
+        class="gf-form-label width-7"
+        title="Optional time format"
+      >Time Format
+      </label>
+      <input
+        type="text"
+        class="gf-form-input"
+        ng-model='ctrl.annotation.timeFormat'
+        value=""
+      >
     </div>
 
     <div class="gf-form">
-      <label class="gf-form-label width-7" title=
-      "Annotation title. Include fields like $field_&lt;field name&gt;">
-      Title</label> <input type="text" class="gf-form-input"
-      ng-model='ctrl.annotation.annotationTitle' placeholder=
-      "Title" value="">
+      <label
+        class="gf-form-label width-7"
+        title="Annotation title. Include fields like $field_&lt;field name&gt;"
+      >Title
+      </label>
+      <input 
+        type="text"
+        class="gf-form-input"
+        ng-model='ctrl.annotation.annotationTitle' 
+        placeholder="Title"
+        value=""
+      >
     </div>
 
     <div class="gf-form">
-      <label class="gf-form-label width-7" title=
-      "Annotation text. Include fields like $field_&lt;field name&gt;">
-      Text</label> <input type="text" class="gf-form-input"
-      ng-model='ctrl.annotation.annotationText' placeholder="Text"
-      value="">
+      <label 
+        class="gf-form-label width-7"
+        title="Annotation text. Include fields like $field_&lt;field name&gt;"
+      >Text
+      </label>
+      <input
+        type="text"
+        class="gf-form-input"
+        ng-model='ctrl.annotation.annotationText'
+        placeholder="Text"
+        value=""
+      >
     </div>
 
     <div class="gf-form">
-      <label class="gf-form-label width-7" title=
-      "Tags (comma-separated)">Tags</label> <input type="text"
-      class="gf-form-input" ng-model=
-      'ctrl.annotation.annotationTags' placeholder="Tags" value="">
+      <label 
+        class="gf-form-label width-7"
+        title="Tags (comma-separated)"
+      >Tags
+      </label>
+      <input
+        type="text"
+        class="gf-form-input"
+        ng-model='ctrl.annotation.annotationTags'
+        placeholder="Tags"
+        value=""
+      >
     </div>
   </div>
 </body>
