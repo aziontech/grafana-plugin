@@ -21,7 +21,7 @@ import {
   defaultQuery,
   MyVariableQuery,
   MultiValueVariable,
-  TextValuePair,
+  DataSourceVariable,
 } from './types';
 import { getTemplateSrv, getBackendSrv } from '@grafana/runtime';
 
@@ -30,8 +30,6 @@ import {
   flatten,
   isRFC3339_ISO6801,
 } from './util';
-
-const supportedVariableTypes = ['constant', 'custom', 'query', 'textbox'];
 
 export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   url: string | undefined;
@@ -81,92 +79,182 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return this.postQuery(query, payload);
   }
 
-  async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
-    return Promise.all(
-      options.targets.map((target) => {
-        return this.createQuery(defaults(target, defaultQuery), options.range, options.scopedVars);
-      })
-    ).then((results: any) => {
-      const dataFrameArray: DataFrame[] = [];
-      for (let res of results) {
-        const dataPathArray: string[] = DataSource.getDataPathArray(res.query.dataPath);
-        const { timePath, timeFormat, groupBy, aliasBy } = res.query;
-        const split = groupBy.split(',');
-        const groupByList: string[] = [];
-        for (const element of split) {
-          const trimmed = element.trim();
-          if (trimmed) {
-            groupByList.push(trimmed);
-          }
-        }
-        for (const dataPath of dataPathArray) {
-          const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
+  private formatFieldTitle(
+    aliasBy: string, 
+    generalReplaceObject: {}, 
+    fieldName: string, 
+    options: DataQueryRequest<MyQuery>
+  ): string {
+    let title: string = aliasBy;
+    const replaceObject: any = { ...generalReplaceObject };
+    replaceObject['fieldName'] = fieldName;
 
-          const dataFrameMap = new Map<string, MutableDataFrame>();
-          for (const doc of docs) {
-            if (timePath in doc) {
-              doc[timePath] = dateTime(doc[timePath], timeFormat);
-            }
-            const identifiers: string[] = [];
-            for (const groupByElement of groupByList) {
-              identifiers.push(doc[groupByElement]);
-            }
-            const identifiersString = identifiers.toString();
-            let dataFrame = dataFrameMap.get(identifiersString);
-            if (!dataFrame) {
-              // we haven't initialized the dataFrame for this specific identifier that we group by yet
-              dataFrame = new MutableDataFrame({ fields: [] });
-              const generalReplaceObject: any = {};
-              for (const fieldName in doc) {
-                generalReplaceObject['field_' + fieldName] = doc[fieldName];
-              }
-              for (const fieldName in doc) {
-                let t: FieldType = FieldType.string;
-                if (fieldName === timePath || isRFC3339_ISO6801(String(doc[fieldName]))) {
-                  t = FieldType.time;
-                } else if (_.isNumber(doc[fieldName])) {
-                  t = FieldType.number;
-                }
-                let title;
-                if (identifiers.length !== 0) {
-                  // if we have any identifiers
-                  title = identifiersString + '_' + fieldName;
-                } else {
-                  title = fieldName;
-                }
-                if (aliasBy) {
-                  title = aliasBy;
-                  const replaceObject = { ...generalReplaceObject };
-                  replaceObject['fieldName'] = fieldName;
-                  for (const replaceKey in replaceObject) {
-                    const replaceValue = replaceObject[replaceKey];
-                    const regex = new RegExp('\\$' + replaceKey, 'g');
-                    title = title.replace(regex, replaceValue);
-                  }
-                  title = getTemplateSrv().replace(title, options.scopedVars);
-                }
-                // const dataFrameParse = dataFrame.addField({
-                dataFrame.addField({
-                  name: fieldName,
-                  type: t,
-                  config: { displayName: title },
-                })
-                // dataFrame.setParser( dataFrameParse, (v: any) => {
-                //   return v || '';
-                // });
-              }
-              dataFrameMap.set(identifiersString, dataFrame);
-            }
+    for (const replaceKey in replaceObject) {
+      const replaceValue: string = replaceObject[replaceKey];
+      const regex = new RegExp('\\$' + replaceKey, 'g');
+      title = title.replace(regex, replaceValue);
+    }
 
-            dataFrame.add(doc);
-          }
-          for (const dataFrame of dataFrameMap.values()) {
-            dataFrameArray.push(dataFrame);
-          }
-        }
+    return getTemplateSrv().replace(title, options.scopedVars);
+  }
+
+  private setFieldType(fieldName: string, timePath: string, doc: any): FieldType {
+    if (fieldName === timePath || isRFC3339_ISO6801(String(doc[fieldName]))) {
+      return FieldType.time;
+    }
+    
+    if (_.isNumber(doc[fieldName])) {
+      return FieldType.number;
+    }
+
+    return FieldType.string;
+  }
+
+  private formatGroupByList(groupBy: string): string[] {
+    const splitGrouping: string[] = groupBy.split(',');
+
+    return splitGrouping.filter((grouping) => grouping.trim());
+  } 
+
+  private formatIdentifiers(formattedGroupBy: string[], doc: any): string[] {
+    return formattedGroupBy.map((groupByElement) => doc[groupByElement]);
+  }
+
+  private setValuesToGeneralReplacementObject(doc: any): {} {
+    const generalReplaceObject: any = {};
+
+    for (const fieldName in doc) {
+      generalReplaceObject['field_' + fieldName] = doc[fieldName];
+    }
+
+    return generalReplaceObject;
+  }
+
+  private setFieldTitle(
+    formattedIdentifiers: string[],
+    identifiersString: string, 
+    fieldName: string, 
+    aliasBy: string,
+    generalReplaceObject: {},
+    options: DataQueryRequest<MyQuery>
+    ): string {
+    let title: string;
+
+    if (formattedIdentifiers.length) {
+      title = identifiersString + '_' + fieldName;
+    } else {
+      title = fieldName;
+    }
+
+    if (aliasBy) {
+      title = this.formatFieldTitle(aliasBy, generalReplaceObject, fieldName, options);
+    }
+
+    return title;
+  }
+
+  private addFieldsToMutableDataFrame(
+    doc: any,
+    timePath: string,
+    formattedIdentifiers: string[],
+    identifiersString: string, 
+    aliasBy: string,
+    options: DataQueryRequest<MyQuery>
+    ): MutableDataFrame {
+    const mutableDataFrame = new MutableDataFrame({ fields: [] });
+    const generalReplaceObject = this.setValuesToGeneralReplacementObject(doc);
+
+    for (const fieldName in doc) {
+      const fieldType: FieldType = this.setFieldType(fieldName, timePath, doc);
+      const fieldTitle: string = this.setFieldTitle(
+        formattedIdentifiers, 
+        identifiersString, 
+        fieldName, 
+        aliasBy, 
+        generalReplaceObject, 
+        options
+      );
+     
+      mutableDataFrame.addField({
+        name: fieldName,
+        type: fieldType,
+        config: { displayName: fieldTitle },
+      });
+    }
+
+    return mutableDataFrame;
+  }
+
+  private addDataFramesToDataFrameMapValues(
+    dataFrameMap: Map<string, MutableDataFrame<any>>,
+    dataFrameArray: DataFrame[]
+  ): void {
+    for (const dataFrame of dataFrameMap.values()) {
+      dataFrameArray.push(dataFrame);
+    }
+  }
+
+  private addDocToDataFrame(
+    docs: any[], 
+    dataFrameMap: Map<string, MutableDataFrame<any>>, 
+    timePath: string, 
+    timeFormat: string,
+    formattedGroupBy: string[],
+    aliasBy: string,
+    options: DataQueryRequest<MyQuery>
+  ): void {
+    for (const doc of docs) {
+      if (timePath in doc) {
+        doc[timePath] = dateTime(doc[timePath], timeFormat);
       }
-      return { data: dataFrameArray };
-    });
+
+      const formattedIdentifiers = this.formatIdentifiers(formattedGroupBy, doc);
+      const identifiersString = formattedIdentifiers.toString();
+
+      let dataFrame = dataFrameMap.get(identifiersString);
+
+      if (!dataFrame) {
+        // we haven't initialized the dataFrame for this specific identifier that we group by yet
+        dataFrame = this.addFieldsToMutableDataFrame(
+          doc, timePath, formattedIdentifiers, identifiersString, aliasBy, options
+        );
+        
+        dataFrameMap.set(identifiersString, dataFrame);
+      }
+
+      dataFrame.add(doc);
+    }
+  }
+
+  private getPopulatedDataFrameArray(results: any, options: any): DataFrame[] {
+    const dataFrameArray: DataFrame[] = [];
+
+    for (let res of results) {
+      const dataPathArray: string[] = DataSource.getDataPathArray(res.query.dataPath);
+      const { timePath, timeFormat, groupBy, aliasBy } = res.query;
+      
+      const formattedGroupBy = this.formatGroupByList(groupBy);
+      
+      for (const dataPath of dataPathArray) {
+        const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
+
+        const dataFrameMap = new Map<string, MutableDataFrame>();
+
+        this.addDocToDataFrame(
+          docs, 
+          dataFrameMap, 
+          timePath, 
+          timeFormat, 
+          formattedGroupBy, 
+          aliasBy, 
+          options
+        );
+
+        this.addDataFramesToDataFrameMapValues(dataFrameMap, dataFrameArray);
+      }
+    }
+
+    return dataFrameArray;
   }
 
   private static getDataPathArray(dataPathString: string): string[] {
@@ -178,14 +266,14 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       }
     }
     if (!dataPathArray) {
-      throw 'data path is empty!';
+      throw new Error('data path is empty!');
     }
     return dataPathArray;
   }
 
   private static getDocs(resultsData: any, dataPath: string): any[] {
     if (!resultsData) {
-      throw 'resultsData was null or undefined';
+      throw new Error('resultsData was null or undefined');
     }
     let data = dataPath.split('.').reduce((d: any, p: any) => {
       if (!d) {
@@ -198,7 +286,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       if (errors && errors.length !== 0) {
         throw errors[0];
       }
-      throw 'Your data path did not exist! dataPath: ' + dataPath;
+      throw new Error('Your data path did not exist! dataPath: ' + dataPath);
     }
     if (resultsData.errors) {
       // There can still be errors even if there is data
@@ -217,6 +305,58 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       pushDoc(data);
     }
     return docs;
+  }
+
+  private getPopulatedMetricFindValuesArray(docs: any[]): MetricFindValue[] {
+    const metricFindValues: MetricFindValue[] = [];
+
+    for (const doc of docs) {
+      if ('__text' in doc && '__value' in doc) {
+        metricFindValues.push({ text: doc['__text'], value: doc['__value'] });
+      } else {
+        for (const fieldName in doc) {
+          metricFindValues.push({ text: doc[fieldName] });
+        }
+      }
+    }
+
+    return metricFindValues;
+  }
+
+  private hasSupportedVariableType(variableType: string): boolean {
+    const supportedVariableTypes: string[] = ['constant', 'custom', 'query', 'textbox'];
+    const hasSupportedType: boolean = supportedVariableTypes.includes(variableType);
+    
+    if (!hasSupportedType) {
+      console.warn(`Variable of type "${variableType}" is not supported`);
+    }
+
+    return hasSupportedType;
+  }
+
+  private formatDataSourceVariableValue(supportedVariable: MultiValueVariable): any {
+    let variableValue: any = supportedVariable.current.value;
+
+    if (variableValue === '$__all' || _.isEqual(variableValue, ['$__all'])) {
+      if (!!supportedVariable.allValue) {
+        variableValue = supportedVariable.options.slice(1).map((textValuePair) => textValuePair.value);
+      } else {
+        variableValue = supportedVariable.allValue;
+      }
+    }
+
+    return variableValue;
+  }
+
+  async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
+    return Promise.all(
+      options.targets.map((target) => {
+        return this.createQuery(defaults(target, defaultQuery), options.range, options.scopedVars);
+      })
+    ).then((results: any) => {
+      const dataFrameArray: DataFrame[] = this.getPopulatedDataFrameArray(results, options);
+      return { data: dataFrameArray };
+    });
   }
 
   testDatasource() {
@@ -247,9 +387,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     );
   }
 
-  async metricFindQuery(query: MyVariableQuery, options?: any) {
-    const metricFindValues: MetricFindValue[] = [];
-
+  async metricFindQuery(query: MyVariableQuery): Promise<MetricFindValue[]> {
     query = defaults(query, defaultQuery);
 
     let payload = query.queryText;
@@ -259,17 +397,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
 
     const docs: any[] = DataSource.getDocs(response.results.data, query.dataPath);
 
-    for (const doc of docs) {
-      if ('__text' in doc && '__value' in doc) {
-        metricFindValues.push({ text: doc['__text'], value: doc['__value'] });
-      } else {
-        for (const fieldName in doc) {
-          metricFindValues.push({ text: doc[fieldName] });
-        }
-      }
-    }
-
-    return metricFindValues;
+    return this.getPopulatedMetricFindValuesArray(docs);
   }
 
   annotationQuery(options: any): Promise<AnnotationEvent[]> {
@@ -320,31 +448,21 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     });
   }
 
-  getVariables() {
-    const variables: { [id: string]: TextValuePair } = {};
+  getVariables(): DataSourceVariable {
+    const variables: DataSourceVariable = {};
+    
     Object.values(getTemplateSrv().getVariables()).forEach((variable) => {
-      if (!supportedVariableTypes.includes(variable.type)) {
-        console.warn(`Variable of type "${variable.type}" is not supported`);
-
-        return;
-      }
+      if (!this.hasSupportedVariableType(variable.type)) { return; }
 
       const supportedVariable = variable as MultiValueVariable;
-
-      let variableValue = supportedVariable.current.value;
-      if (variableValue === '$__all' || _.isEqual(variableValue, ['$__all'])) {
-        if (supportedVariable.allValue === null || supportedVariable.allValue === '') {
-          variableValue = supportedVariable.options.slice(1).map((textValuePair) => textValuePair.value);
-        } else {
-          variableValue = supportedVariable.allValue;
-        }
-      }
+      const formattedVariableValue = this.formatDataSourceVariableValue(supportedVariable);
 
       variables[supportedVariable.id] = {
         text: supportedVariable.current.text,
-        value: variableValue,
+        value: formattedVariableValue,
       };
     });
+
     return variables;
   }
 }

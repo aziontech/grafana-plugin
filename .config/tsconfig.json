@@ -5,6 +5,7 @@
  */
  {
   "compilerOptions": {
+    "target": "es6",
     "alwaysStrict": true,
     "declaration": false,
     "rootDir": "../src",
