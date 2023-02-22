@@ -502,9 +502,3 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return variables;
   }
 }
-  
-
-
-
-
-
