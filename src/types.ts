@@ -49,7 +49,7 @@ export interface MyVariableQuery extends DataQuery {
   queryText: string;
 }
 
-export interface TextValuePair {
+interface TextValuePair {
   text: string;
   value: any;
 }
@@ -59,4 +59,8 @@ export interface MultiValueVariable extends VariableModel {
   id: string;
   current: TextValuePair;
   options: TextValuePair[];
+}
+
+export interface DataSourceVariable {
+  [id: string]: TextValuePair 
 }

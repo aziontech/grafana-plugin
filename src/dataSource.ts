@@ -21,7 +21,7 @@ import {
   defaultQuery,
   MyVariableQuery,
   MultiValueVariable,
-  TextValuePair,
+  DataSourceVariable,
 } from './types';
 import { getTemplateSrv, getBackendSrv } from '@grafana/runtime';
 
@@ -30,8 +30,6 @@ import {
   flatten,
   isRFC3339_ISO6801,
 } from './util';
-
-const supportedVariableTypes = ['constant', 'custom', 'query', 'textbox'];
 
 export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   url: string | undefined;
@@ -259,17 +257,6 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return dataFrameArray;
   }
 
-  async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
-    return Promise.all(
-      options.targets.map((target) => {
-        return this.createQuery(defaults(target, defaultQuery), options.range, options.scopedVars);
-      })
-    ).then((results: any) => {
-      const dataFrameArray: DataFrame[] = this.getPopulatedDataFrameArray(results, options);
-      return { data: dataFrameArray };
-    });
-  }
-
   private static getDataPathArray(dataPathString: string): string[] {
     const dataPathArray: string[] = [];
     for (const dataPath of dataPathString.split(',')) {
@@ -320,6 +307,58 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return docs;
   }
 
+  private getPopulatedMetricFindValuesArray(docs: any[]): MetricFindValue[] {
+    const metricFindValues: MetricFindValue[] = [];
+
+    for (const doc of docs) {
+      if ('__text' in doc && '__value' in doc) {
+        metricFindValues.push({ text: doc['__text'], value: doc['__value'] });
+      } else {
+        for (const fieldName in doc) {
+          metricFindValues.push({ text: doc[fieldName] });
+        }
+      }
+    }
+
+    return metricFindValues;
+  }
+
+  private hasSupportedVariableType(variableType: string): boolean {
+    const supportedVariableTypes: string[] = ['constant', 'custom', 'query', 'textbox'];
+    const hasSupportedType: boolean = supportedVariableTypes.includes(variableType);
+    
+    if (!hasSupportedType) {
+      console.warn(`Variable of type "${variableType}" is not supported`);
+    }
+
+    return hasSupportedType;
+  }
+
+  private formatDataSourceVariableValue(supportedVariable: MultiValueVariable): any {
+    let variableValue: any = supportedVariable.current.value;
+
+    if (variableValue === '$__all' || _.isEqual(variableValue, ['$__all'])) {
+      if (!!supportedVariable.allValue) {
+        variableValue = supportedVariable.options.slice(1).map((textValuePair) => textValuePair.value);
+      } else {
+        variableValue = supportedVariable.allValue;
+      }
+    }
+
+    return variableValue;
+  }
+
+  async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
+    return Promise.all(
+      options.targets.map((target) => {
+        return this.createQuery(defaults(target, defaultQuery), options.range, options.scopedVars);
+      })
+    ).then((results: any) => {
+      const dataFrameArray: DataFrame[] = this.getPopulatedDataFrameArray(results, options);
+      return { data: dataFrameArray };
+    });
+  }
+
   testDatasource() {
     const q = `{
       __schema{
@@ -348,9 +387,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     );
   }
 
-  async metricFindQuery(query: MyVariableQuery, options?: any) {
-    const metricFindValues: MetricFindValue[] = [];
-
+  async metricFindQuery(query: MyVariableQuery): Promise<MetricFindValue[]> {
     query = defaults(query, defaultQuery);
 
     let payload = query.queryText;
@@ -360,17 +397,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
 
     const docs: any[] = DataSource.getDocs(response.results.data, query.dataPath);
 
-    for (const doc of docs) {
-      if ('__text' in doc && '__value' in doc) {
-        metricFindValues.push({ text: doc['__text'], value: doc['__value'] });
-      } else {
-        for (const fieldName in doc) {
-          metricFindValues.push({ text: doc[fieldName] });
-        }
-      }
-    }
-
-    return metricFindValues;
+    return this.getPopulatedMetricFindValuesArray(docs);
   }
 
   annotationQuery(options: any): Promise<AnnotationEvent[]> {
@@ -421,31 +448,21 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     });
   }
 
-  getVariables() {
-    const variables: { [id: string]: TextValuePair } = {};
+  getVariables(): DataSourceVariable {
+    const variables: DataSourceVariable = {};
+    
     Object.values(getTemplateSrv().getVariables()).forEach((variable) => {
-      if (!supportedVariableTypes.includes(variable.type)) {
-        console.warn(`Variable of type "${variable.type}" is not supported`);
-
-        return;
-      }
+      if (!this.hasSupportedVariableType(variable.type)) { return; }
 
       const supportedVariable = variable as MultiValueVariable;
-
-      let variableValue = supportedVariable.current.value;
-      if (variableValue === '$__all' || _.isEqual(variableValue, ['$__all'])) {
-        if (supportedVariable.allValue === null || supportedVariable.allValue === '') {
-          variableValue = supportedVariable.options.slice(1).map((textValuePair) => textValuePair.value);
-        } else {
-          variableValue = supportedVariable.allValue;
-        }
-      }
+      const formattedVariableValue = this.formatDataSourceVariableValue(supportedVariable);
 
       variables[supportedVariable.id] = {
         text: supportedVariable.current.text,
-        value: variableValue,
+        value: formattedVariableValue,
       };
     });
+
     return variables;
   }
 }
