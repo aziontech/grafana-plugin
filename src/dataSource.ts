@@ -354,9 +354,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     let text = query.annotationText;
     let tags = query.annotationTags;
 
-    // Strange loop. Gotta check why it's needed
-
-    for (const fieldName in doc) {
+    for (const fieldName in doc) {  
       const fieldValue = doc[fieldName];
       const replaceKey = 'field_' + fieldName;
       const regex = new RegExp('\\$' + replaceKey, 'g');
@@ -396,7 +394,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
         annotation.timeEnd = dateTime(doc[endTimePath], timeFormat).valueOf();
       }
 
-      const {title, text, tags } = this.formatAnnotationQueryProps(query, docs);
+      const {title, text, tags } = this.formatAnnotationQueryProps(query, doc);
 
       annotation.title = title;
       annotation.text = text;
