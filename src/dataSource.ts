@@ -478,10 +478,9 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   }
 
   async annotationQuery(options: any): Promise<AnnotationEvent[]> {
-    const query = defaults(options.annotation, defaultQuery);
-    return Promise.all([this.createQuery(query, options.range)]).then((results: any) => {
-      return this.getPopulatedAnnotationEventList(query, results);
-    });
+    const query: any = defaults(options.annotation, defaultQuery);
+    const results: any = await Promise.all([this.createQuery(query, options.range)]);
+    return this.getPopulatedAnnotationEventList(query, results);
   }
 
   getVariables(): DataSourceVariable {
