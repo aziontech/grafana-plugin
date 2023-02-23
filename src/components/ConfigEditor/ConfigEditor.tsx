@@ -12,8 +12,9 @@ export function ConfigEditor(props: EditorProps): ReactElement {
   defaults(jsonData, defaultEditor);
 
   const onUrlFieldChange = useChangeOptions(props, 'url');
-  const onPersonalTokenChange = useChangeSecureOptions(props, 'httpHeaderValue1', 'Token ');
-  const onResetPersonalToken = useResetSecureOptions(props, 'httpHeaderValue1');
+  const onPersonalTokenChange = useChangeSecureOptions(props);
+  const onResetPersonalToken = useResetSecureOptions(props);
+
   return (
     <>
       <FieldSet label="General Settings">
@@ -34,7 +35,7 @@ export function ConfigEditor(props: EditorProps): ReactElement {
         <div className="gf-form">
           <SecretFormField
             isConfigured={Boolean(secureJsonFields.httpHeaderValue1)}
-            value={secureJsonData?.httpHeaderValue1 || ''}
+            value={secureJsonData?.token || ''}
             label="Personal Token"
             placeholder="Personal Token"
             labelWidth={8}

@@ -1,5 +1,5 @@
 import { ChangeEvent, useCallback } from 'react';
-import type { BasicDataSourceOptions, BasicSecureJsonData } from '../../types';
+import type { BasicDataSourceOptions } from '../../types';
 import type { EditorProps } from './types';
 
 type OnChangeTypeEditor = (event: ChangeEvent<HTMLInputElement>) => void;
@@ -22,25 +22,25 @@ export function useChangeOptions(props: EditorProps, propertyName: keyof BasicDa
     );
 }
 
-export function useChangeSecureOptions(props: EditorProps, propertyName: keyof BasicSecureJsonData, startValue: string): OnChangeTypeEditor {
+export function useChangeSecureOptions(props: EditorProps): OnChangeTypeEditor {
     const { onOptionsChange, options } = props;
 
     return useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
-            event.target.value = event.target.value.replace(startValue, '')
             onOptionsChange({
                 ...options,
                 secureJsonData: {
                     ...options.secureJsonData,
-                    [propertyName]: startValue + event.target.value,
+                    httpHeaderValue1: 'Token ' + event.target.value,
+                    token: event.target.value,
                 },
             });
         },
-        [onOptionsChange, options, propertyName, startValue]
+        [onOptionsChange, options]
     );
 }
 
-export function useResetSecureOptions(props: EditorProps, propertyName: keyof BasicSecureJsonData): () => void {
+export function useResetSecureOptions(props: EditorProps): () => void {
     const { onOptionsChange, options } = props;
 
     return useCallback(() => {
@@ -48,12 +48,13 @@ export function useResetSecureOptions(props: EditorProps, propertyName: keyof Ba
             ...options,
             secureJsonFields: {
                 ...options.secureJsonFields,
-                [propertyName]: false,
+                httpHeaderValue1: false,
             },
             secureJsonData: {
                 ...options.secureJsonData,
-                [propertyName]: '',
+                httpHeaderValue1: '',
+                token: '',
             },
         });
-    }, [onOptionsChange, options, propertyName]);
+    }, [onOptionsChange, options]);
 }

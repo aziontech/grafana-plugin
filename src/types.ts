@@ -42,6 +42,7 @@ export interface BasicDataSourceOptions extends DataSourceJsonData {
 
 export interface BasicSecureJsonData {
   httpHeaderValue1?: string;
+  token?: string;
 }
 
 export interface MyVariableQuery extends DataQuery {
