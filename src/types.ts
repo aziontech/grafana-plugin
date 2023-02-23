@@ -64,3 +64,9 @@ export interface MultiValueVariable extends VariableModel {
 export interface DataSourceVariable {
   [id: string]: TextValuePair 
 }
+
+export interface AnnotationQueryProps {
+  title: string;
+  text: string;
+  tags: string;
+}

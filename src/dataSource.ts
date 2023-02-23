@@ -1,5 +1,6 @@
 import defaults from 'lodash/defaults';
-
+import { getTemplateSrv, getBackendSrv, FetchResponse } from '@grafana/runtime';
+import _ from 'lodash';
 import {
   AnnotationEvent,
   DataQueryRequest,
@@ -14,7 +15,6 @@ import {
   FieldType,
   DataFrame,
 } from '@grafana/data';
-
 import {
   MyQuery,
   BasicDataSourceOptions,
@@ -22,10 +22,8 @@ import {
   MyVariableQuery,
   MultiValueVariable,
   DataSourceVariable,
+  AnnotationQueryProps,
 } from './types';
-import { getTemplateSrv, getBackendSrv } from '@grafana/runtime';
-
-import _ from 'lodash';
 import {
   flatten,
   isRFC3339_ISO6801,
@@ -39,7 +37,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     this.url = instanceSettings.url;
   }
 
-  private request(data: string) {
+  private request(data: string): Promise<FetchResponse<any>> {
     const options: any = {
       url: this.url,
       method: 'POST',
@@ -50,7 +48,10 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return getBackendSrv().datasourceRequest(options);
   }
 
-  private postQuery(query: Partial<MyQuery>, payload: string) {
+  private async postQuery(
+    query: Partial<MyQuery>,
+    payload: string
+  ): Promise<{query: Partial<MyQuery>; results: any;}> {
     return this.request(payload)
       .then((results: any) => {
         return { query, results };
@@ -69,8 +70,12 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       });
   }
 
-  private createQuery(query: MyQuery, range: TimeRange | undefined, scopedVars: ScopedVars | undefined = undefined) {
-    let payload = getTemplateSrv().replace(query.queryText, {
+  private createQuery(
+    query: MyQuery,
+    range: TimeRange | undefined,
+    scopedVars: ScopedVars | undefined = undefined
+  ): Promise<{query: Partial<MyQuery>; results: any;}> {
+    let payload: string = getTemplateSrv().replace(query.queryText, {
       ...scopedVars,
       timeFrom: { text: 'from', value: range?.from.valueOf() },
       timeTo: { text: 'to', value: range?.to.valueOf() },
@@ -208,10 +213,10 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
         doc[timePath] = dateTime(doc[timePath], timeFormat);
       }
 
-      const formattedIdentifiers = this.formatIdentifiers(formattedGroupBy, doc);
-      const identifiersString = formattedIdentifiers.toString();
+      const formattedIdentifiers: string[] = this.formatIdentifiers(formattedGroupBy, doc);
+      const identifiersString: string = formattedIdentifiers.toString();
 
-      let dataFrame = dataFrameMap.get(identifiersString);
+      let dataFrame: MutableDataFrame<any> | undefined = dataFrameMap.get(identifiersString);
 
       if (!dataFrame) {
         // we haven't initialized the dataFrame for this specific identifier that we group by yet
@@ -238,7 +243,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       for (const dataPath of dataPathArray) {
         const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
 
-        const dataFrameMap = new Map<string, MutableDataFrame>();
+        const dataFrameMap: Map<string, MutableDataFrame<any>> = new Map<string, MutableDataFrame>();
 
         this.addDocToDataFrame(
           docs, 
@@ -260,7 +265,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   private static getDataPathArray(dataPathString: string): string[] {
     const dataPathArray: string[] = [];
     for (const dataPath of dataPathString.split(',')) {
-      const trimmed = dataPath.trim();
+      const trimmed: string = dataPath.trim();
       if (trimmed) {
         dataPathArray.push(trimmed);
       }
@@ -348,6 +353,78 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return variableValue;
   }
 
+  private formatAnnotationQueryProps(query: any, doc: any): AnnotationQueryProps {
+    let title: string = query.annotationTitle;
+    let text: string = query.annotationText;
+    let tags: string = query.annotationTags;
+
+    for (const fieldName in doc) {  
+      const fieldValue = doc[fieldName];
+      const replaceKey = 'field_' + fieldName;
+      const regex = new RegExp('\\$' + replaceKey, 'g');
+      title = title.replace(regex, fieldValue);
+      text = text.replace(regex, fieldValue);
+      tags = tags.replace(regex, fieldValue);
+    }
+
+    return {
+      title,
+      text,
+      tags
+    };
+  }
+
+  private formatAnnotationTags(tags: string): string[] {
+    const splitTags: string[] = tags.split(',');
+
+    return splitTags.filter((tag) => tag.trim());
+  } 
+
+  private populateAnnotationEventList(
+    docs: any[],
+    result: any,
+    query: any,
+    annotationEventList: AnnotationEvent[]
+    ): void {
+    const { timePath, endTimePath, timeFormat } = result.query;
+
+    for (const doc of docs) {
+      const annotation: AnnotationEvent = {};
+      if (timePath in doc) {
+        annotation.time = dateTime(doc[timePath], timeFormat).valueOf();
+      }
+      if (endTimePath in doc) {
+        annotation.isRegion = true;
+        annotation.timeEnd = dateTime(doc[endTimePath], timeFormat).valueOf();
+      }
+
+      const {title, text, tags } = this.formatAnnotationQueryProps(query, doc);
+
+      annotation.title = title;
+      annotation.text = text;
+      annotation.tags = this.formatAnnotationTags(tags);
+
+      annotationEventList.push(annotation);
+    }
+  }
+
+  private getPopulatedAnnotationEventList(query: any, results: any): AnnotationEvent[] {
+    const annotationEventList: AnnotationEvent[] = [];
+
+    for (const result of results) {
+      const { data }: any = result.results
+      const { dataPath: dataPathFromQuery }: any = result.query;
+      const dataPathArray: string[] = DataSource.getDataPathArray(dataPathFromQuery);
+      
+      for (const dataPath of dataPathArray) {
+        const docs: any[] = DataSource.getDocs(data, dataPath);
+        this.populateAnnotationEventList(docs, result, query, annotationEventList)
+      }
+    }
+
+    return annotationEventList;
+  }
+
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
     return Promise.all(
       options.targets.map((target) => {
@@ -359,7 +436,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     });
   }
 
-  testDatasource() {
+  testDatasource(): Promise<{status: string; message: string;}> {
     const q = `{
       __schema{
         queryType{name}
@@ -390,62 +467,19 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   async metricFindQuery(query: MyVariableQuery): Promise<MetricFindValue[]> {
     query = defaults(query, defaultQuery);
 
-    let payload = query.queryText;
+    let payload: string = query.queryText;
     payload = getTemplateSrv().replace(payload, { ...this.getVariables });
 
-    const response = await this.postQuery(query, payload);
-
+    const response: { query: Partial<MyQuery>; results: any; } = await this.postQuery(query, payload);
     const docs: any[] = DataSource.getDocs(response.results.data, query.dataPath);
 
     return this.getPopulatedMetricFindValuesArray(docs);
   }
 
-  annotationQuery(options: any): Promise<AnnotationEvent[]> {
-    const query = defaults(options.annotation, defaultQuery);
-    return Promise.all([this.createQuery(query, options.range)]).then((results: any) => {
-      const r: AnnotationEvent[] = [];
-      for (const res of results) {
-        const { timePath, endTimePath, timeFormat } = res.query;
-        const dataPathArray: string[] = DataSource.getDataPathArray(res.query.dataPath);
-        for (const dataPath of dataPathArray) {
-          const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
-          for (const doc of docs) {
-            const annotation: AnnotationEvent = {};
-            if (timePath in doc) {
-              annotation.time = dateTime(doc[timePath], timeFormat).valueOf();
-            }
-            if (endTimePath in doc) {
-              annotation.isRegion = true;
-              annotation.timeEnd = dateTime(doc[endTimePath], timeFormat).valueOf();
-            }
-            let title = query.annotationTitle;
-            let text = query.annotationText;
-            let tags = query.annotationTags;
-            for (const fieldName in doc) {
-              const fieldValue = doc[fieldName];
-              const replaceKey = 'field_' + fieldName;
-              const regex = new RegExp('\\$' + replaceKey, 'g');
-              title = title.replace(regex, fieldValue);
-              text = text.replace(regex, fieldValue);
-              tags = tags.replace(regex, fieldValue);
-            }
-
-            annotation.title = title;
-            annotation.text = text;
-            const tagsList: string[] = [];
-            for (const element of tags.split(',')) {
-              const trimmed = element.trim();
-              if (trimmed) {
-                tagsList.push(trimmed);
-              }
-            }
-            annotation.tags = tagsList;
-            r.push(annotation);
-          }
-        }
-      }
-      return r;
-    });
+  async annotationQuery(options: any): Promise<AnnotationEvent[]> {
+    const query: any = defaults(options.annotation, defaultQuery);
+    const results: any = await Promise.all([this.createQuery(query, options.range)]);
+    return this.getPopulatedAnnotationEventList(query, results);
   }
 
   getVariables(): DataSourceVariable {
@@ -454,8 +488,8 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     Object.values(getTemplateSrv().getVariables()).forEach((variable) => {
       if (!this.hasSupportedVariableType(variable.type)) { return; }
 
-      const supportedVariable = variable as MultiValueVariable;
-      const formattedVariableValue = this.formatDataSourceVariableValue(supportedVariable);
+      const supportedVariable: MultiValueVariable = variable as MultiValueVariable;
+      const formattedVariableValue: any = this.formatDataSourceVariableValue(supportedVariable);
 
       variables[supportedVariable.id] = {
         text: supportedVariable.current.text,
@@ -466,9 +500,3 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     return variables;
   }
 }
-  
-
-
-
-
-

@@ -6,7 +6,7 @@ import { GraphQLAnnotationsQueryCtrl } from './GraphQLAnnotationsQueryCtrl';
 import { VariableQueryEditor } from './VariableQueryEditor';
 
 export const plugin = new DataSourcePlugin<DataSource, MyQuery, BasicDataSourceOptions>(DataSource)
-    .setConfigEditor(ConfigEditor)
+  .setConfigEditor(ConfigEditor)
   .setAnnotationQueryCtrl(GraphQLAnnotationsQueryCtrl)
   .setQueryEditor(QueryEditor)
   .setVariableQueryEditor(VariableQueryEditor);
