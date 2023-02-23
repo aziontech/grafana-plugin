@@ -75,7 +75,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     range: TimeRange | undefined,
     scopedVars: ScopedVars | undefined = undefined
   ): Promise<{query: Partial<MyQuery>; results: any;}> {
-    let payload = getTemplateSrv().replace(query.queryText, {
+    let payload: string = getTemplateSrv().replace(query.queryText, {
       ...scopedVars,
       timeFrom: { text: 'from', value: range?.from.valueOf() },
       timeTo: { text: 'to', value: range?.to.valueOf() },
@@ -213,10 +213,10 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
         doc[timePath] = dateTime(doc[timePath], timeFormat);
       }
 
-      const formattedIdentifiers = this.formatIdentifiers(formattedGroupBy, doc);
-      const identifiersString = formattedIdentifiers.toString();
+      const formattedIdentifiers: string[] = this.formatIdentifiers(formattedGroupBy, doc);
+      const identifiersString: string = formattedIdentifiers.toString();
 
-      let dataFrame = dataFrameMap.get(identifiersString);
+      let dataFrame: MutableDataFrame<any> | undefined = dataFrameMap.get(identifiersString);
 
       if (!dataFrame) {
         // we haven't initialized the dataFrame for this specific identifier that we group by yet
@@ -243,7 +243,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       for (const dataPath of dataPathArray) {
         const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
 
-        const dataFrameMap = new Map<string, MutableDataFrame>();
+        const dataFrameMap: Map<string, MutableDataFrame<any>> = new Map<string, MutableDataFrame>();
 
         this.addDocToDataFrame(
           docs, 
@@ -265,7 +265,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   private static getDataPathArray(dataPathString: string): string[] {
     const dataPathArray: string[] = [];
     for (const dataPath of dataPathString.split(',')) {
-      const trimmed = dataPath.trim();
+      const trimmed: string = dataPath.trim();
       if (trimmed) {
         dataPathArray.push(trimmed);
       }
@@ -354,9 +354,9 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   }
 
   private formatAnnotationQueryProps(query: any, doc: any): AnnotationQueryProps {
-    let title = query.annotationTitle;
-    let text = query.annotationText;
-    let tags = query.annotationTags;
+    let title: string = query.annotationTitle;
+    let text: string = query.annotationText;
+    let tags: string = query.annotationTags;
 
     for (const fieldName in doc) {  
       const fieldValue = doc[fieldName];
@@ -412,8 +412,8 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     const annotationEventList: AnnotationEvent[] = [];
 
     for (const result of results) {
-      const { data } = result.results
-      const { dataPath: dataPathFromQuery } = result.query;
+      const { data }: any = result.results
+      const { dataPath: dataPathFromQuery }: any = result.query;
       const dataPathArray: string[] = DataSource.getDataPathArray(dataPathFromQuery);
       
       for (const dataPath of dataPathArray) {
@@ -467,11 +467,10 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   async metricFindQuery(query: MyVariableQuery): Promise<MetricFindValue[]> {
     query = defaults(query, defaultQuery);
 
-    let payload = query.queryText;
+    let payload: string = query.queryText;
     payload = getTemplateSrv().replace(payload, { ...this.getVariables });
 
-    const response = await this.postQuery(query, payload);
-
+    const response: { query: Partial<MyQuery>; results: any; } = await this.postQuery(query, payload);
     const docs: any[] = DataSource.getDocs(response.results.data, query.dataPath);
 
     return this.getPopulatedMetricFindValuesArray(docs);
@@ -489,8 +488,8 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     Object.values(getTemplateSrv().getVariables()).forEach((variable) => {
       if (!this.hasSupportedVariableType(variable.type)) { return; }
 
-      const supportedVariable = variable as MultiValueVariable;
-      const formattedVariableValue = this.formatDataSourceVariableValue(supportedVariable);
+      const supportedVariable: MultiValueVariable = variable as MultiValueVariable;
+      const formattedVariableValue: any = this.formatDataSourceVariableValue(supportedVariable);
 
       variables[supportedVariable.id] = {
         text: supportedVariable.current.text,
