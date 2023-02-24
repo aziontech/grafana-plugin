@@ -22,8 +22,16 @@
       "small": "img/logo_small.svg",
       "large": "img/logo.svg"
     },
-    "links": [],
-    "screenshots": [],
+    "links": [
+      { "name": "Website", "url": "https://www.azion.com" },
+      { "name": "License", "url": "https://github.com/aziontech/grafana-plugin/blob/main/LICENSE" },
+      { "name": "Github", "url": "https://github.com/aziontech/grafana-plugin" }
+    ],
+    "screenshots": [
+      { "name": "Requests Example", "path": "img/azion-grafana-requests.png"},
+      { "name": "Aggregated Example", "path": "img/azion-grafana-aggregate.png"},
+      { "name": "Request Count Example", "path": "img/azion-grafana-req-count.png"}
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
