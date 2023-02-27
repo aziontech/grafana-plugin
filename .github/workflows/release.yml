@@ -89,11 +89,11 @@ jobs:
         go install
         popd
         plugincheck2 -config ./plugin-validator/config/default.yaml ${{ steps.metadata.outputs.archive }}
-
+    
     - name: Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-          git config --global user.email ${{ secrets.GH_EMAIL }}
-          git config --global user.name ${{ secrets.GH_USER }}
-          yarn semantic-release
+        git config --global user.email ${{ secrets.GH_EMAIL }}
+        git config --global user.name ${{ secrets.GH_USER }}
+        yarn semantic-release
