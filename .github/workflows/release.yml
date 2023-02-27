@@ -1,4 +1,4 @@
-name: Publish version tag
+name: Release
 
 on:
   push:
@@ -9,7 +9,7 @@ env:
   HUSKY: 0
 
 jobs:
-  publish-tags:
+  release:
     runs-on: ubuntu-latest
     env:
       GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }} # Requires a Grafana API key from Grafana.com.
