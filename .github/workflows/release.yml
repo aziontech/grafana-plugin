@@ -93,4 +93,7 @@ jobs:
     - name: Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: yarn semantic-release
+      run: |
+          git config --global user.email ${{ secrets.GH_EMAIL }}
+          git config --global user.name ${{ secrets.GH_USER }}
+          yarn semantic-release
