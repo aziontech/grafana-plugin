@@ -84,7 +84,7 @@ jobs:
     - name: Permission script
       run: |
         rm -rf ${{ steps.metadata.outputs.archive }}
-        chmod +x .github/scripts/publish_zip.sh
+        chmod +x .github/scripts/publish.sh
     
     - name: Release
       env:
