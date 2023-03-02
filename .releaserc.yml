@@ -6,7 +6,7 @@
       '@semantic-release/release-notes-generator',
       '@semantic-release/changelog',
       ['@semantic-release/npm', { 'npmPublish': false }],
-      ['@semantic-release/exec', { 'prepareCmd': '.github/scripts/publish_zip.sh ${nextRelease.version}' }],      
+      ['@semantic-release/exec', { 'prepareCmd': '.github/scripts/publish.sh ${nextRelease.version}' }],      
       [
         '@semantic-release/github',
         {
