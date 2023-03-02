@@ -1,6 +1,6 @@
 {
   "name": "azion",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "",
   "repository": "https://github.com/aziontech/grafana-plugin",
   "scripts": {
@@ -30,6 +30,7 @@
     "@grafana/eslint-config": "^5.1.0",
     "@grafana/tsconfig": "^1.2.0-rc1",
     "@semantic-release/changelog": "^6.0.2",
+    "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@swc/core": "^1.2.144",
     "@swc/helpers": "^0.4.12",
