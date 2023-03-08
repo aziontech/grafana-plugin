@@ -37,3 +37,27 @@ jobs:
     
     - name: Run unit tests 
       run: yarn test:ci
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: coverage_unit_report
+        path: coverage/lcov.info
+        retention-days: 1
+  sonarqube:
+    needs: run-tests
+    name: SonarQube
+    runs-on: [self-hosted, sonarqube]
+    timeout-minutes: 5
+    container:
+      image: ubuntu:18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: coverage_unit_report
+      - name: fix code coverage paths - lcov.info
+        run: sed -i 's:/__w/grafana-plugin/grafana-plugin/:/github/workspace/:' lcov.info
+      - uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}  
