@@ -28,7 +28,7 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
 
   return (
     <>
-      <div className="gf-form">
+      <div className="gf-form" data-testid="input-data-path">
         <span className="gf-form-label width-10">Data Path</span>
         <input
           name="dataPath"
@@ -38,7 +38,7 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
           value={state.dataPath}
         />
       </div>
-      <div className="gf-form">
+      <div className="gf-form" data-testid="input-query">
         <span className="gf-form-label width-10">Query</span>
         <QueryField query={state.queryText || ''} onBlur={saveQuery} onChange={onChangeQuery} portalOrigin="graphQL" />
       </div>

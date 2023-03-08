@@ -1,24 +1,24 @@
 import { ChangeEvent, useCallback } from 'react';
-import type { BasicDataSourceOptions } from '../../types';
 import type { EditorProps } from './types';
 
 type OnChangeTypeEditor = (event: ChangeEvent<HTMLInputElement>) => void;
 
-export function useChangeOptions(props: EditorProps, propertyName: keyof BasicDataSourceOptions): OnChangeTypeEditor {
+export function useChangeOptions(props: EditorProps): OnChangeTypeEditor {
     const { onOptionsChange, options } = props;
 
     return useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
             onOptionsChange({
                 ...options,
-                [propertyName]: event.target.value,
+                url: event.target.value,
                 jsonData: {
+                    
                     ...options.jsonData,
-                    [propertyName]: event.target.value,
+                    url: event.target.value,
                 },
             });
         },
-        [onOptionsChange, options, propertyName]
+        [onOptionsChange, options]
     );
 }
 

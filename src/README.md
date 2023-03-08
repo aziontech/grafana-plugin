@@ -39,7 +39,7 @@ See [Grafana's documentation](https://grafana.com/docs/grafana/latest/administra
 ### Aggregate requests query
 
 ```
-    query aggRequests {
+    query {
             httpMetrics(
                     limit: 2000
         aggregate: {sum:requests}
