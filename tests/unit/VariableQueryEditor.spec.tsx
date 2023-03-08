@@ -2,9 +2,18 @@ import { render, fireEvent, userEvent, React } from '../index';
 import { MyQuery } from '../../src/types';
 import { VariableQueryEditor } from '../../src/VariableQueryEditor';
 
-const query: MyQuery = {
-  dataPath: 'data.test',
-  queryText: 'query teste',
+const query: MyQuery = {  
+  refId: '',
+  queryText: 'query {    data:submissions(user:"$user"){        Time:submitTime        idle running completed    }  }',
+  dataPath: 'data',
+  timePath: 'Time',
+  endTimePath: 'endTime',
+  timeFormat: null,
+  groupBy: '', // `identifier`
+  aliasBy: '', // 'Server [[tag_identifier]]`
+  annotationTitle: '',
+  annotationText: '',
+  annotationTags: '',
 };
 
 const onChangeMock = jest.fn();
@@ -74,7 +83,7 @@ describe('VariableQueryEditor', () => {
 
   it('should call onChange when the Query input changes and onBlur is triggered', async () => {
     const { inputQuery } = makeSut();
-    const newText = 'novo texto';
+    const newText = 'new text';
     await userEvent.click(inputQuery);
     fireEvent.blur(inputQuery, { target: { innerHTML: newText } });
     expect(inputQuery.textContent).toBe(newText);

@@ -1,8 +1,8 @@
 import { render, fireEvent, React, userEvent } from '../../../tests';
 import { QueryEditor } from '../../../src/components/QueryEditor/QueryEditor';
-import { debug } from 'console';
+
 const defaultQuery = {
-    queryText: 'Query test exempla',
+    queryText: 'Query test',
     dataPath: '',
     timePath: '',
     timeFormat: '',

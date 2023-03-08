@@ -13,7 +13,7 @@ module.exports = {
     'react-inlinesvg': path.resolve(__dirname, 'jest', 'mocks', 'react-inlinesvg.tsx'),
   },
   modulePaths: ['<rootDir>/src'],
-  testMatch: ['**/tests/**/*.spec.{js,jsx,ts,tsx}'],
+  testMatch: ['**/tests/unit/**/*.spec.{js,jsx,ts,tsx}'],
   testPathIgnorePatterns: ['/node_modules/'],
   watchPathIgnorePatterns: ['/node_modules/'],
   collectCoverage: true,

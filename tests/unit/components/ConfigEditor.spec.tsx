@@ -37,7 +37,7 @@ describe('ConfigEditor', () => {
         jest.clearAllMocks();
     });
 
-    it('renders the general settings form fields', () => {
+    it('should renders the general settings form fields', () => {
         const { getByText, inputPersonalToken, inputUrl } = makeSut();
         const apiUrlField = getByText('API');
         const personalTokenField = getByText('Personal Token');
@@ -48,7 +48,7 @@ describe('ConfigEditor', () => {
         expect(inputPersonalToken).toBeInTheDocument();
     });
 
-    it('calls onOptionsChange when the url field value changes', () => {
+    it('should call onOptionsChange when the url field value changes', () => {
         const { getByTestId } = render(<ConfigEditor {...defaultProps} />);
         const apiUrlField = getByTestId('input-form-field');
         fireEvent.change(apiUrlField, { target: { value: 'https://new-api.com' } });
@@ -57,7 +57,7 @@ describe('ConfigEditor', () => {
         expect(mockOnChangeOptions).toHaveBeenCalledWith({ ...mock, url: 'https://new-api.com' });
     });
 
-    it('calls onSecureOptionsChange when the personal token field value changes', () => {
+    it('should call onSecureOptionsChange when the personal token field value changes', () => {
         const { getByTestId } = render(<ConfigEditor {...defaultProps} />);
         const personalTokenField = getByTestId('input-form-secret-field');
         const newValue = 'new-token'
@@ -71,7 +71,7 @@ describe('ConfigEditor', () => {
         });
     });
 
-    it('calls onResetSecureOptions when the reset button is clicked', async () => {
+    it('should call onResetSecureOptions when the reset button is clicked', async () => {
         const { getByRole, getByTestId } = render(<ConfigEditor {...defaultProps} />);
 
         const newText = 'new-token';
