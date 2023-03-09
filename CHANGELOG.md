@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/aziontech/grafana-plugin/compare/v1.0.0...v1.1.0) (2023-03-09)
+
+
+### Features
+
+* creating tests for views ([#12](https://github.com/aziontech/grafana-plugin/issues/12)) ([bd172c0](https://github.com/aziontech/grafana-plugin/commit/bd172c0b9af21b2b149357051eb2a190835c5d93))
+
 # 1.0.0 (2023-03-02)
 
 
