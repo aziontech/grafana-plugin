@@ -48,7 +48,8 @@ describe('QueryEditor', () => {
         expect(inputFieldAliasBy).toBeInTheDocument();
     });
 
-    it('should call onChangeQuery when QueryField changes', async () => {
+    it('should call @onChangeQuery when QueryField changes', async () => {
+
         const { inputQuery } = makeSut();
         const newQuery = 'new query';        
         await userEvent.click(inputQuery);
@@ -56,35 +57,40 @@ describe('QueryEditor', () => {
         expect(inputQuery.textContent).toBe(newQuery);
     });
 
-    it('should call onDataPathTextChange when Data Path input changes', () => {
+    it('should call @onDataPathTextChange when Data Path input changes', () => {
+
         const { inputFieldDataPath } = makeSut();
         const dataPath = 'test';
         fireEvent.change(inputFieldDataPath, { target: { value: dataPath } });
         expect(onChangeMock).toHaveBeenCalledWith({ ...defaultQuery, dataPath });
     });
 
-    it('should call onTimePathTextChange when Time Path input changes', () => {
+    it('should call @onTimePathTextChange when Time Path input changes', () => {
+
         const { inputFieldTimePath } = makeSut();
         const timePath = 'test';
         fireEvent.change(inputFieldTimePath, { target: { value: timePath } });
         expect(onChangeMock).toHaveBeenCalledWith({ ...defaultQuery, timePath });
     });
 
-    it('should call onTimeFormatTextChange when Time Format input changes', () => {
+    it('should call @onTimeFormatTextChange when Time Format input changes', () => {
+
         const { inputFieldTimeFormat } = makeSut();
         const timeFormat = 'test';
         fireEvent.change(inputFieldTimeFormat, { target: { value: timeFormat } });
         expect(onChangeMock).toHaveBeenCalledWith({ ...defaultQuery, timeFormat });
     });
 
-    it('should call onGroupByTextChange when Group By input changes', () => {
+    it('should call @onGroupByTextChange when Group By input changes', () => {
+
         const { inputFieldGroupBy } = makeSut();
         const groupBy = 'test';
         fireEvent.change(inputFieldGroupBy, { target: { value: groupBy } });
         expect(onChangeMock).toHaveBeenCalledWith({ ...defaultQuery, groupBy });
     });
     
-    it('should call onAliasByTextChange when Alias By input changes', () => {
+    it('should call @onAliasByTextChange when Alias By input changes', () => {
+
         const { inputFieldAliasBy } = makeSut();
         const aliasBy = 'test';
         fireEvent.change(inputFieldAliasBy, { target: { value: aliasBy } });

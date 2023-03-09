@@ -61,7 +61,8 @@ describe('VariableQueryEditor', () => {
     expect(inputQuery.textContent).toBe(query.queryText);
   });
 
-  it('should call saveQuery function when input field loses focus', () => {
+  it('should call #saveQuery when input field loses focus', () => {
+
     const { inputDataPath } = makeSut();
     const textDataPath = 'test';
     fireEvent.change(inputDataPath, { target: { value: textDataPath } });
@@ -81,7 +82,8 @@ describe('VariableQueryEditor', () => {
     expect(inputDataPath.value).toBe(newText);
   });
 
-  it('should call onChange when the Query input changes and onBlur is triggered', async () => {
+  it('should call @onChange when the Query input changes and @onBlur is triggered', async () => {
+
     const { inputQuery } = makeSut();
     const newText = 'new text';
     await userEvent.click(inputQuery);
