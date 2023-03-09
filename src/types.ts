@@ -23,7 +23,7 @@ export const defaultQuery: Partial<MyQuery> = {
   dataPath: 'data',
   timePath: 'Time',
   endTimePath: 'endTime',
-  timeFormat: null,
+  timeFormat: '',
   groupBy: '', // `identifier`
   aliasBy: '', // 'Server [[tag_identifier]]`
   annotationTitle: '',

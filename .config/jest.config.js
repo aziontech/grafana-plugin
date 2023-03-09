@@ -13,13 +13,14 @@ module.exports = {
     'react-inlinesvg': path.resolve(__dirname, 'jest', 'mocks', 'react-inlinesvg.tsx'),
   },
   modulePaths: ['<rootDir>/src'],
+  testMatch: ['**/tests/unit/**/*.spec.{js,jsx,ts,tsx}'],
+  testPathIgnorePatterns: ['/node_modules/'],
+  watchPathIgnorePatterns: ['/node_modules/'],
+  collectCoverage: true,
+  coveragePathIgnorePatterns: ['.*assets.*', '/node_modules/'],
+  collectCoverageFrom: ['src/**/*.{js,jsx,ts,tsx}'],
   setupFilesAfterEnv: ['<rootDir>/jest-setup.js'],
   testEnvironment: 'jest-environment-jsdom',
-  testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
-    '<rootDir>/src/**/*.{spec,test,jest}.{js,jsx,ts,tsx}',
-    '<rootDir>/src/**/*.{spec,test,jest}.{js,jsx,ts,tsx}',
-  ],
   transform: {
     '^.+\\.(t|j)sx?$': [
       '@swc/jest',

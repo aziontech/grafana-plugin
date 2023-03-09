@@ -5,10 +5,10 @@ import { LegacyForms, QueryField, Icon } from '@grafana/ui';
 import { defaultQuery } from '../../types';
 import type { EditorProps } from './types';
 
-interface State {}
+interface State { }
 export class QueryEditor extends PureComponent<EditorProps, State> {
-  onComponentDidMount() {}
-  
+  onComponentDidMount() { }
+
   onChangeQuery = (value: string, override?: boolean) => {
     const { onChange, query } = this.props;
     if (onChange) {
@@ -35,19 +35,25 @@ export class QueryEditor extends PureComponent<EditorProps, State> {
     const { onChange, query } = this.props;
     onChange({ ...query, aliasBy: event.target.value });
   };
-  
+
   render() {
     const query = defaults(this.props.query, defaultQuery);
     const { queryText, dataPath, timePath, timeFormat, groupBy, aliasBy } = query;
 
     return (
       <>
-        <div className="gf-form">
-          <QueryField query={queryText || ''} onChange={this.onChangeQuery} portalOrigin="graphQL" />
+        <div className="gf-form"
+          data-testid="query-field">
+          <QueryField
+            query={queryText || ''}
+            onChange={this.onChangeQuery}
+            portalOrigin="graphQL"
+          />
         </div>
         <div className="gf-form">
           <LegacyForms.FormField
             labelWidth={8}
+            data-testid="field-data-path"
             inputWidth={24}
             value={dataPath || ''}
             onChange={this.onDataPathTextChange}
@@ -59,6 +65,7 @@ export class QueryEditor extends PureComponent<EditorProps, State> {
           <LegacyForms.FormField
             labelWidth={8}
             inputWidth={24}
+            data-testid="field-time-path"
             value={timePath || ''}
             onChange={this.onTimePathTextChange}
             label="Time path"
@@ -69,6 +76,7 @@ export class QueryEditor extends PureComponent<EditorProps, State> {
           <LegacyForms.FormField
             labelWidth={8}
             inputWidth={24}
+            data-testid="field-time-format"
             value={timeFormat || ''}
             onChange={this.onTimeFormatTextChange}
             label="Time format"
@@ -85,6 +93,7 @@ export class QueryEditor extends PureComponent<EditorProps, State> {
             labelWidth={8}
             inputWidth={24}
             value={groupBy || ''}
+            data-testid="field-group-by"
             onChange={this.onGroupByTextChange}
             label="Group by"
             tooltip="dot-delimited path for the key to use. Separate with commas to use multiple fields to group by"
@@ -96,6 +105,7 @@ export class QueryEditor extends PureComponent<EditorProps, State> {
             inputWidth={24}
             value={aliasBy || ''}
             onChange={this.onAliasByTextChange}
+            data-testid="field-alias-by"
             label="Alias by"
             tooltip="The formattable text to alias by. Use $field_<field name> to replace with the value of a field, or $fieldName to replace with the name of the field"
           />
