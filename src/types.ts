@@ -1,6 +1,14 @@
-import { DataQuery, DataSourceJsonData, VariableModel } from '@grafana/data';
+import { DataQuery, SelectableValue, VariableModel } from '@grafana/data';
+import { SelectValue } from '@grafana/ui';
 
-export interface MyQuery extends DataQuery {
+export type QueryDataSources = 'metrics' | 'events';
+
+export interface SelectDataSource {
+  dataSource: SelectValue<String>;
+  optionsDataSource: Array<SelectableValue<QueryDataSources>>;
+}
+
+export interface MyQuery extends DataQuery, SelectDataSource {
   queryText: string;
   dataPath: string;
   timePath: string;
@@ -10,7 +18,7 @@ export interface MyQuery extends DataQuery {
   aliasBy: string;
   annotationTitle: string;
   annotationText: string;
-  annotationTags: string;
+  annotationTags: string;  
 }
 
 export const defaultQuery: Partial<MyQuery> = {
@@ -19,8 +27,13 @@ export const defaultQuery: Partial<MyQuery> = {
           Time:submitTime
           idle running completed
       }
-}`,
+  }`,
+  dataSource: 'metrics',
   dataPath: 'data',
+  optionsDataSource: [
+    { value: 'metrics', label: 'Metrics' },
+    { value: 'events', label: 'Events' },
+  ],
   timePath: 'Time',
   endTimePath: 'endTime',
   timeFormat: '',
@@ -31,17 +44,7 @@ export const defaultQuery: Partial<MyQuery> = {
   annotationTags: '',
 };
 
-/**
- * These are options configured for each DataSource instance
- */
-export interface BasicDataSourceOptions extends DataSourceJsonData {
-  url?: string;
-  apiKey?: string;
-  httpHeaderName1?: string;
-}
-
 export interface BasicSecureJsonData {
-  httpHeaderValue1?: string;
   token?: string;
 }
 

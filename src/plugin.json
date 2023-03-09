@@ -5,6 +5,18 @@
   "id": "azion-azion-datasource",
   "metrics": true,
   "annotations": true,
+  "routes": [
+    {
+      "path": "beholder",
+      "url": "https://api.azionapi.net/metrics/graphql",      
+      "headers": [
+        {
+          "name": "Authorization",
+          "content": "Token {{ .SecureJsonData.token }}"
+        }
+      ]
+    } 
+  ],
   "includes": [
     {
       "name": "Http Metrics Examples",
