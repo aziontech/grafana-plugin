@@ -8,5 +8,8 @@
   "root": true,
   "rules": {
     "react/prop-types": "off"
-  }
+  },
+  "parserOptions": {
+    "warnOnUnsupportedTypeScriptVersion": false
+  }  
 }
