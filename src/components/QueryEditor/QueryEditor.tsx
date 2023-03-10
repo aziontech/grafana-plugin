@@ -2,7 +2,7 @@ import defaults from 'lodash/defaults';
 
 import React, { PureComponent, ChangeEvent } from 'react';
 import { LegacyForms, QueryField, Icon, InlineLabel } from '@grafana/ui';
-import { defaultQuery } from '../../types';
+import { defaultQuery, QueryDataSources } from '../../types';
 import type { EditorProps } from './types';
 import { SelectableValue } from '@grafana/data';
 
@@ -42,15 +42,16 @@ export class QueryEditor extends PureComponent<EditorProps, State> {
     onChange({ ...query, aliasBy: event.target.value });
   };
 
-  onSourceSelector = (event: SelectableValue<String>) => {
-    const { onChange, query} = this.props;
-    onChange({ ...query, dataSource: event.value });
+  onSourceSelector = (dataSourceSelect: SelectableValue<QueryDataSources>) => {
+    const { onChange, query, onRunQuery} = this.props;
+    onChange({ ...query, dataSourceSelect });
+    onRunQuery();
   };
 
   render() {
     const query = defaults(this.props.query, defaultQuery);
-    const { queryText, dataSource, optionsDataSource, dataPath, timePath, timeFormat, groupBy, aliasBy } = query;    
-    
+    const { queryText, dataSourceSelect, optionsDataSource, dataPath, timePath, timeFormat, groupBy, aliasBy } = query;    
+        
     return (
       <>
         <div className="gf-form"
@@ -72,7 +73,7 @@ export class QueryEditor extends PureComponent<EditorProps, State> {
             tabSelectsValue={true}
             width={24}
             menuShouldPortal={true}
-            value={dataSource}
+            value={dataSourceSelect}
             options={optionsDataSource}
             onChange={this.onSourceSelector}
           />

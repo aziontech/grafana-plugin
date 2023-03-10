@@ -24,6 +24,7 @@ import {
   MultiValueVariable,
   DataSourceVariable,
   AnnotationQueryProps,
+  QueryDataSources,
 } from './types';
 import {
   flatten,
@@ -35,13 +36,12 @@ export class DataSource extends DataSourceApi<MyQuery> {
 
   constructor(instanceSettings: DataSourceInstanceSettings) {
     super(instanceSettings);
-    this.url = instanceSettings.url;
+    this.url = instanceSettings.url;    
   }
 
-  private request(data: string): Promise<FetchResponse<any>> {
-    const routePath = '/beholder';
+  private request(data: string, dataSourceUrl: QueryDataSources | undefined  ): Promise<FetchResponse<any>> {    
     const options: any = {
-      url: this.url + routePath,
+      url: `${this.url}/beholder/${dataSourceUrl}/graphql`,
       method: 'POST',
       data: {
         query: data,
@@ -58,9 +58,9 @@ export class DataSource extends DataSourceApi<MyQuery> {
   private async postQuery(
     query: Partial<MyQuery>,
     payload: string
-  ): Promise<{ query: Partial<MyQuery>; results: any; }> {
-    console.log(query.dataSource);
-    return this.request(payload)
+  ): Promise<{ query: Partial<MyQuery>; results: any; }> {    
+    const dataSourceUrl = query.dataSourceSelect?.value;
+    return this.request(payload, dataSourceUrl)
       .then((results: any) => {
         return { query, results };
       })

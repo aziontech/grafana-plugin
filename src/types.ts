@@ -1,10 +1,9 @@
 import { DataQuery, SelectableValue, VariableModel } from '@grafana/data';
-import { SelectValue } from '@grafana/ui';
 
 export type QueryDataSources = 'metrics' | 'events';
 
-export interface SelectDataSource {
-  dataSource: SelectValue<String>;
+export interface SelectDataSource {  
+  dataSourceSelect: SelectableValue<QueryDataSources>;
   optionsDataSource: Array<SelectableValue<QueryDataSources>>;
 }
 
@@ -18,7 +17,7 @@ export interface MyQuery extends DataQuery, SelectDataSource {
   aliasBy: string;
   annotationTitle: string;
   annotationText: string;
-  annotationTags: string;  
+  annotationTags: string;
 }
 
 export const defaultQuery: Partial<MyQuery> = {
@@ -28,7 +27,7 @@ export const defaultQuery: Partial<MyQuery> = {
           idle running completed
       }
   }`,
-  dataSource: 'metrics',
+  dataSourceSelect: { value: 'metrics', label: 'Metrics' },
   dataPath: 'data',
   optionsDataSource: [
     { value: 'metrics', label: 'Metrics' },
@@ -37,8 +36,8 @@ export const defaultQuery: Partial<MyQuery> = {
   timePath: 'Time',
   endTimePath: 'endTime',
   timeFormat: '',
-  groupBy: '', // `identifier`
-  aliasBy: '', // 'Server [[tag_identifier]]`
+  groupBy: '',
+  aliasBy: '',
   annotationTitle: '',
   annotationText: '',
   annotationTags: '',
@@ -66,7 +65,7 @@ export interface MultiValueVariable extends VariableModel {
 }
 
 export interface DataSourceVariable {
-  [id: string]: TextValuePair 
+  [id: string]: TextValuePair
 }
 
 export interface AnnotationQueryProps {

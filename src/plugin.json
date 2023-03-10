@@ -8,7 +8,7 @@
   "routes": [
     {
       "path": "beholder",
-      "url": "https://api.azionapi.net/metrics/graphql",      
+      "url": "https://api.azionapi.net",      
       "headers": [
         {
           "name": "Authorization",
