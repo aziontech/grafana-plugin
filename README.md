@@ -1,4 +1,4 @@
-# Grafana data source plugin template
+# Grafana Data Source Plugin Template
 
 This template is a starting point for building a Data Source Plugin for Grafana.
 
