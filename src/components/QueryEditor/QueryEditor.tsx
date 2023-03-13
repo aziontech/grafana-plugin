@@ -64,7 +64,10 @@ export class QueryEditor extends PureComponent<EditorProps, State> {
         </div>
 
         <div className="gf-form">
-          <InlineLabel width={16}>          
+          <InlineLabel 
+            width={16}
+            tooltip="dot-delimited for the data source to use"
+          >          
             Data source
           </InlineLabel>
           <LegacyForms.Select
