@@ -1,6 +1,13 @@
-import { DataQuery, DataSourceJsonData, VariableModel } from '@grafana/data';
+import { DataQuery, SelectableValue, VariableModel } from '@grafana/data';
 
-export interface MyQuery extends DataQuery {
+export type QueryDataSources = 'metrics' | 'events';
+
+export interface SelectDataSource {  
+  dataSourceSelect: SelectableValue<QueryDataSources>;
+  optionsDataSource: Array<SelectableValue<QueryDataSources>>;
+}
+
+export interface MyQuery extends DataQuery, SelectDataSource {
   queryText: string;
   dataPath: string;
   timePath: string;
@@ -19,29 +26,24 @@ export const defaultQuery: Partial<MyQuery> = {
           Time:submitTime
           idle running completed
       }
-}`,
+  }`,
+  dataSourceSelect: { value: 'metrics', label: 'Metrics' },
   dataPath: 'data',
+  optionsDataSource: [
+    { value: 'metrics', label: 'Metrics' },
+    { value: 'events', label: 'Events' },
+  ],
   timePath: 'Time',
   endTimePath: 'endTime',
   timeFormat: '',
-  groupBy: '', // `identifier`
-  aliasBy: '', // 'Server [[tag_identifier]]`
+  groupBy: '',
+  aliasBy: '',
   annotationTitle: '',
   annotationText: '',
   annotationTags: '',
 };
 
-/**
- * These are options configured for each DataSource instance
- */
-export interface BasicDataSourceOptions extends DataSourceJsonData {
-  url?: string;
-  apiKey?: string;
-  httpHeaderName1?: string;
-}
-
 export interface BasicSecureJsonData {
-  httpHeaderValue1?: string;
   token?: string;
 }
 
@@ -63,7 +65,7 @@ export interface MultiValueVariable extends VariableModel {
 }
 
 export interface DataSourceVariable {
-  [id: string]: TextValuePair 
+  [id: string]: TextValuePair
 }
 
 export interface AnnotationQueryProps {

@@ -1,5 +1,7 @@
 import defaults from 'lodash/defaults';
 import { getTemplateSrv, getBackendSrv, FetchResponse } from '@grafana/runtime';
+import { lastValueFrom } from 'rxjs';
+
 import _ from 'lodash';
 import {
   AnnotationEvent,
@@ -17,42 +19,48 @@ import {
 } from '@grafana/data';
 import {
   MyQuery,
-  BasicDataSourceOptions,
   defaultQuery,
   MyVariableQuery,
   MultiValueVariable,
   DataSourceVariable,
   AnnotationQueryProps,
+  QueryDataSources,
 } from './types';
 import {
   flatten,
   isRFC3339_ISO6801,
 } from './util';
 
-export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
+export class DataSource extends DataSourceApi<MyQuery> {
   url: string | undefined;
 
-  constructor(instanceSettings: DataSourceInstanceSettings<BasicDataSourceOptions>) {
+  constructor(instanceSettings: DataSourceInstanceSettings) {
     super(instanceSettings);
-    this.url = instanceSettings.url;
+    this.url = instanceSettings.url;    
   }
 
-  private request(data: string): Promise<FetchResponse<any>> {
+  private request(data: string, dataSourceUrl: QueryDataSources | undefined  ): Promise<FetchResponse<any>> {    
     const options: any = {
-      url: this.url,
+      url: `${this.url}/beholder/${dataSourceUrl}/graphql`,
       method: 'POST',
       data: {
         query: data,
       },
     };
-    return getBackendSrv().datasourceRequest(options);
+
+    const observableResponse = getBackendSrv()
+      .fetch(options);
+
+    // https://community.grafana.com/t/how-to-migrate-from-backendsrv-datasourcerequest-to-backendsrv-fetch/58770
+    return lastValueFrom(observableResponse);
   }
 
   private async postQuery(
     query: Partial<MyQuery>,
     payload: string
-  ): Promise<{query: Partial<MyQuery>; results: any;}> {
-    return this.request(payload)
+  ): Promise<{ query: Partial<MyQuery>; results: any; }> {    
+    const dataSourceUrl = query.dataSourceSelect?.value;
+    return this.request(payload, dataSourceUrl)
       .then((results: any) => {
         return { query, results };
       })
@@ -85,9 +93,9 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   }
 
   private formatFieldTitle(
-    aliasBy: string, 
-    generalReplaceObject: {}, 
-    fieldName: string, 
+    aliasBy: string,
+    generalReplaceObject: {},
+    fieldName: string,
     options: DataQueryRequest<MyQuery>
   ): string {
     let title: string = aliasBy;
@@ -107,7 +115,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     if (fieldName === timePath || isRFC3339_ISO6801(String(doc[fieldName]))) {
       return FieldType.time;
     }
-    
+
     if (_.isNumber(doc[fieldName])) {
       return FieldType.number;
     }
@@ -119,7 +127,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     const splitGrouping: string[] = groupBy.split(',');
 
     return splitGrouping.filter((grouping) => grouping.trim());
-  } 
+  }
 
   private formatIdentifiers(formattedGroupBy: string[], doc: any): string[] {
     return formattedGroupBy.map((groupByElement) => doc[groupByElement]);
@@ -137,12 +145,12 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
 
   private setFieldTitle(
     formattedIdentifiers: string[],
-    identifiersString: string, 
-    fieldName: string, 
+    identifiersString: string,
+    fieldName: string,
     aliasBy: string,
     generalReplaceObject: {},
     options: DataQueryRequest<MyQuery>
-    ): string {
+  ): string {
     let title: string;
 
     if (formattedIdentifiers.length) {
@@ -162,24 +170,24 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     doc: any,
     timePath: string,
     formattedIdentifiers: string[],
-    identifiersString: string, 
+    identifiersString: string,
     aliasBy: string,
     options: DataQueryRequest<MyQuery>
-    ): MutableDataFrame {
+  ): MutableDataFrame {
     const mutableDataFrame = new MutableDataFrame({ fields: [] });
     const generalReplaceObject = this.setValuesToGeneralReplacementObject(doc);
 
     for (const fieldName in doc) {
       const fieldType: FieldType = this.setFieldType(fieldName, timePath, doc);
       const fieldTitle: string = this.setFieldTitle(
-        formattedIdentifiers, 
-        identifiersString, 
-        fieldName, 
-        aliasBy, 
-        generalReplaceObject, 
+        formattedIdentifiers,
+        identifiersString,
+        fieldName,
+        aliasBy,
+        generalReplaceObject,
         options
       );
-     
+
       mutableDataFrame.addField({
         name: fieldName,
         type: fieldType,
@@ -200,9 +208,9 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   }
 
   private addDocToDataFrame(
-    docs: any[], 
-    dataFrameMap: Map<string, MutableDataFrame<any>>, 
-    timePath: string, 
+    docs: any[],
+    dataFrameMap: Map<string, MutableDataFrame<any>>,
+    timePath: string,
     timeFormat: string,
     formattedGroupBy: string[],
     aliasBy: string,
@@ -223,7 +231,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
         dataFrame = this.addFieldsToMutableDataFrame(
           doc, timePath, formattedIdentifiers, identifiersString, aliasBy, options
         );
-        
+
         dataFrameMap.set(identifiersString, dataFrame);
       }
 
@@ -237,21 +245,21 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     for (let res of results) {
       const dataPathArray: string[] = DataSource.getDataPathArray(res.query.dataPath);
       const { timePath, timeFormat, groupBy, aliasBy } = res.query;
-      
+
       const formattedGroupBy = this.formatGroupByList(groupBy);
-      
+
       for (const dataPath of dataPathArray) {
         const docs: any[] = DataSource.getDocs(res.results.data, dataPath);
 
         const dataFrameMap: Map<string, MutableDataFrame<any>> = new Map<string, MutableDataFrame>();
 
         this.addDocToDataFrame(
-          docs, 
-          dataFrameMap, 
-          timePath, 
-          timeFormat, 
-          formattedGroupBy, 
-          aliasBy, 
+          docs,
+          dataFrameMap,
+          timePath,
+          timeFormat,
+          formattedGroupBy,
+          aliasBy,
           options
         );
 
@@ -331,7 +339,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
   private hasSupportedVariableType(variableType: string): boolean {
     const supportedVariableTypes: string[] = ['constant', 'custom', 'query', 'textbox'];
     const hasSupportedType: boolean = supportedVariableTypes.includes(variableType);
-    
+
     if (!hasSupportedType) {
       console.warn(`Variable of type "${variableType}" is not supported`);
     }
@@ -358,7 +366,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     let text: string = query.annotationText;
     let tags: string = query.annotationTags;
 
-    for (const fieldName in doc) {  
+    for (const fieldName in doc) {
       const fieldValue = doc[fieldName];
       const replaceKey = 'field_' + fieldName;
       const regex = new RegExp('\\$' + replaceKey, 'g');
@@ -378,14 +386,14 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
     const splitTags: string[] = tags.split(',');
 
     return splitTags.filter((tag) => tag.trim());
-  } 
+  }
 
   private populateAnnotationEventList(
     docs: any[],
     result: any,
     query: any,
     annotationEventList: AnnotationEvent[]
-    ): void {
+  ): void {
     const { timePath, endTimePath, timeFormat } = result.query;
 
     for (const doc of docs) {
@@ -415,7 +423,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
       const { data }: any = result.results
       const { dataPath: dataPathFromQuery }: any = result.query;
       const dataPathArray: string[] = DataSource.getDataPathArray(dataPathFromQuery);
-      
+
       for (const dataPath of dataPathArray) {
         const docs: any[] = DataSource.getDocs(data, dataPath);
         this.populateAnnotationEventList(docs, result, query, annotationEventList)
@@ -484,7 +492,7 @@ export class DataSource extends DataSourceApi<MyQuery, BasicDataSourceOptions> {
 
   getVariables(): DataSourceVariable {
     const variables: DataSourceVariable = {};
-    
+
     Object.values(getTemplateSrv().getVariables()).forEach((variable) => {
       if (!this.hasSupportedVariableType(variable.type)) { return; }
 
