@@ -5,6 +5,7 @@ import { VariableQueryEditor } from '../../src/VariableQueryEditor';
 const query: MyQuery = {  
   refId: '',
   queryText: 'query {    data:submissions(user:"$user"){        Time:submitTime        idle running completed    }  }',
+  dataSourceSelect: 'data',
   dataPath: 'data',
   timePath: 'Time',
   endTimePath: 'endTime',
@@ -70,7 +71,7 @@ describe('VariableQueryEditor', () => {
 
     expect(onChangeMock).toHaveBeenCalledWith(
       { ...query, dataPath: textDataPath },
-      `${query.queryText} (${textDataPath})`
+      `${query.queryText} (${query.dataSourceSelect}) (${textDataPath})`
     );
   });
 
