@@ -19,8 +19,8 @@
   ],
   "includes": [
     {
-      "name": "Http Metrics Examples",
-      "path": "dashboards/http-metrics-examples.json",
+      "name": "Data Transferred",
+      "path": "dashboards/edgeApplications/data-transferred.json",
       "type": "dashboard"
     }
   ],

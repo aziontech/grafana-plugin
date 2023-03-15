@@ -21,14 +21,23 @@ export interface MyQuery extends DataQuery, SelectDataSource {
 }
 
 export const defaultQuery: Partial<MyQuery> = {
-  queryText: `query {
-      data:submissions(user:"$user"){
-          Time:submitTime
-          idle running completed
-      }
+  queryText: `query MetricsQuery {
+    httpMetrics(
+      limit: 1,
+      filter: {
+        tsRange: {begin:"2022-04-27T10:10:10", end:"2022-11-07T21:10:10"}
+      },
+      aggregate: {sum: bytesSent}
+      groupBy: [ts]
+      orderBy: [ts_ASC, sum_DESC]
+      )
+    {
+      ts
+      sum
+    }
   }`,
   dataSourceSelect: { value: 'metrics', label: 'Metrics' },
-  dataPath: 'data',
+  dataPath: 'httpMetrics',
   optionsDataSource: [
     { value: 'metrics', label: 'Metrics' },
     { value: 'events', label: 'Events' },

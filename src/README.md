@@ -28,11 +28,11 @@ See [Grafana's documentation](https://grafana.com/docs/grafana/latest/administra
 
 ## Screenshots
 
-![Azion Grafana plugin requests example]()
+![Azion Grafana plugin requests example](https://raw.githubusercontent.com/aziontech/grafana-plugin/dev/src/img/azion-grafana-requests.png)
 
-![Azion Grafana plugin aggregated example]()
+![Azion Grafana plugin aggregated example](https://raw.githubusercontent.com/aziontech/grafana-plugin/dev/src/img/azion-grafana-aggregate.png)
 
-![Azion Grafana plugin requestcount example]()
+![Azion Grafana plugin requestcount example](https://raw.githubusercontent.com/aziontech/grafana-plugin/dev/src/img/azion-grafana-req-count.png)
 
 ## Examples
 
