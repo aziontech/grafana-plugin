@@ -25,7 +25,7 @@ export const defaultQuery: Partial<MyQuery> = {
     httpMetrics(
       limit: 1,
       filter: {
-        tsRange: {begin:"2022-04-27T10:10:10", end:"2022-11-07T21:10:10"}
+        tsRange: { begin: "\${__from:date:iso}", end: "\${__to:date:iso}" }
       },
       aggregate: {sum: bytesSent}
       groupBy: [ts]
