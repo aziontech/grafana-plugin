@@ -51,7 +51,6 @@ export class DataSource extends DataSourceApi<MyQuery> {
     const observableResponse = getBackendSrv()
       .fetch(options);
 
-    // https://community.grafana.com/t/how-to-migrate-from-backendsrv-datasourcerequest-to-backendsrv-fetch/58770
     return lastValueFrom(observableResponse);
   }
 
