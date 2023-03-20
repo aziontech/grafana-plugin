@@ -1,0 +1,7 @@
+apiVersion: 1
+
+datasources:
+  - name: Azion
+    type: azion-azion-datasource    
+    isDefault: true    
+    editable: true
