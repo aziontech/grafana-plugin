@@ -22,7 +22,6 @@ export function ConfigEditor(props: EditorProps): ReactElement {
               isConfigured={Boolean(secureJsonFields.token)}
               value={secureJsonData?.token || ''}
               label="Personal Token"
-              // tooltip="Not used yet"
               placeholder="Personal Token"
               labelWidth={8}
               inputWidth={20}
