@@ -1,6 +1,6 @@
 {
   "name": "azion",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "",
   "repository": "https://github.com/aziontech/grafana-plugin",
   "scripts": {
