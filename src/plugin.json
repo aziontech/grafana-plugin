@@ -22,6 +22,11 @@
       "name": "Data Transferred",
       "path": "dashboards/edgeApplications/data-transferred.json",
       "type": "dashboard"
+    },
+    {
+      "name": "Tech talk 2.0",
+      "path": "dashboards/test/tech.json",
+      "type": "dashboard"
     }
   ],
   "info": {
