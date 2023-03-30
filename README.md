@@ -16,11 +16,22 @@ If you need to install a custom version of the plugin from GitHub, you can use t
 ```
 ### Install plugin on local Grafana
 
+#### Our plugin has not been signed by the Grafana team yet as it is currently undergoing evaluation. In the meantime, it is necessary to enable the use of our plugin in the settings.
+
+```bash
+allow_loading_unsigned_plugins = azion-azion-datasource
+```
+
 After the user has downloaded ([Plugin zip file](https://github.com/aziontech/grafana-plugin/releases/latest)) the archive containing the plugin assets, they can install it by extracting the archive into their plugin directory.
 ```bash
 unzip azion-azion-datasource-*.*.*.zip -d YOUR_PLUGIN_DIR/azion-azion-datasource
 ```
+Restart the Grafana server to load the manually installed plugin.
+
 The path ("YOUR_PLUGIN_DIR") to the plugin directory is defined in the configuration file. For more information, refer to [Configuration](https://grafana.com/docs/grafana/v8.4/administration/configuration/#plugins).
+
+
+
 
 # Getting started
 
