@@ -1,49 +1,52 @@
-## Install Grafana plugin azion-azion-datasource
+# Install Azion Grafana plugin data source
 
-### Install from grafana.com
-To install the plugin through grafana, visit the plugin page at [azion-azion-datasource](https://grafana.com/grafana/plugins/azion-azion-datasource/)
-### Install using grafana-cli
-If you're using the Grafana CLI to install a plugin, there are two commands you can use. The first one will install the latest published version of the plugin:
-   ```bash
-   grafana-cli plugins install azion-azion-datasource
-   ```
-If you need to install a custom version of the plugin from GitHub, you can use the following command:
-```bash
-   grafana-cli --pluginUrl <ZIP_FILE_URL> plugins install azion-azion-datasource
-   
-   # exemple v1.0.0
-   grafana-cli --pluginUrl https://github.com/aziontech/grafana-plugin/releases/download/v1.0.0/azion-azion-datasource-1.0.0.zip plugins install azion-azion-datasource
+Azion Grafana plugin data source is available for local installation.
+
+---
+
+## Install Azion plugin on local Grafana {#install-locally}
+
+To use the Azion Grafana plugin:
+
+1. [Download the binary file and install Grafana](https://grafana.com/docs/grafana/latest/setup-grafana/installation/) according to your operating system.
+2. On your machine, create a folder to use with Grafana, such as `grafana-test`.
+3. On the folder you've just created, extract the Grafana file you downloaded on step 1.
+4. Open the extracted file in your tool of preference, such as a terminal or VS Code.
+5. In the folder `conf`, open the file `defaults.ini`.
+6. Search for `allow_loading_unsigned_plugins = ` and replace it with:
+
 ```
-### Install plugin on local Grafana
-
-#### Our plugin has not been signed by the Grafana team yet as it is currently undergoing evaluation. In the meantime, it is necessary to enable the use of our plugin in the settings.
-
-```bash
 allow_loading_unsigned_plugins = azion-azion-datasource
 ```
 
-After the user has downloaded ([Plugin zip file](https://github.com/aziontech/grafana-plugin/releases/latest)) the archive containing the plugin assets, they can install it by extracting the archive into their plugin directory.
-```bash
-unzip azion-azion-datasource-*.*.*.zip -d YOUR_PLUGIN_DIR/azion-azion-datasource
+7. Create a folder called `data` > inside it, create a new folder called `plugins`. The `data` folder may already exist in your repository; then, you only need to create the `plugins` folder.
+8. Download the [Azion plugin zip file](https://github.com/aziontech/grafana-plugin/releases/latest) containing the plugin's assets.
+9. Copy the downloaded file to the `plugins` folder you created inside `data`.
+10. On a terminal, open the `plugins` folder > run:
+
 ```
-Restart the Grafana server to load the manually installed plugin.
+unzip azion-azion-datasource-*.*.*.zip -d ./azion-azion-datasource
+```
 
-The path ("YOUR_PLUGIN_DIR") to the plugin directory is defined in the configuration file. For more information, refer to [Configuration](https://grafana.com/docs/grafana/v8.4/administration/configuration/#plugins).
+11. Restart the Grafana server to load the manually installed plugin.
 
+By default, Grafana uses the `localhost:3000` port to access it.
 
+Refer to [How to use a pre-built dashboard with the Azion plugin on Grafana](https://www.azion.com/en/documentation/products/guides/azion-plugin-grafana-pre-built-dash/) and [How to customize a dashboard with the Azion plugin on Grafana](https://www.azion.com/en/documentation/products/guides/azion-plugin-grafana/) to continue using the Azion Grafana plugin.
 
+---
 
-# Getting started
+## Frontend installation {#frontend-installation}
 
-### Frontend
+You can also run the Azion Grafana plugin locally. To do so:
 
-1. Install dependencies
+1. Install dependencies:
 
    ```bash
    yarn
    ```
 
-2. Build plugin in development mode or run in watch mode
+2. Build the plugin in development mode or run it in watch mode:
 
    ```bash
    yarn dev
@@ -51,13 +54,13 @@ The path ("YOUR_PLUGIN_DIR") to the plugin directory is defined in the configura
    yarn watch
    ```
 
-3. Build plugin in production mode
+3. Build the plugin in production mode:
 
    ```bash
    yarn build
    ```
 
-4. Run the tests (using Jest)
+4. Run the tests (using Jest):
 
    ```bash
    # Runs the tests and watches for changes
@@ -67,7 +70,7 @@ The path ("YOUR_PLUGIN_DIR") to the plugin directory is defined in the configura
    yarn lint:ci
    ```
 
-5. Spin up a Grafana instance and run the plugin inside it (using Docker)
+5. Spin up a Grafana instance and run the plugin inside it (using Docker):
 
    ```bash
    yarn server
@@ -75,7 +78,7 @@ The path ("YOUR_PLUGIN_DIR") to the plugin directory is defined in the configura
    yarn dev 
    ```
 
-6. Run the linter
+6. Run the linter:
 
    ```bash
    yarn lint
