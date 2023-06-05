@@ -19,7 +19,7 @@ To use the Azion Grafana plugin:
 allow_loading_unsigned_plugins = azion-azion-datasource
 ```
 
-7. Inside the folder `data`, create a new folder called `plugins`.
+7. Create a folder called `data` > inside it, create a new folder called `plugins`. The `data` folder may already exist in your repository; then, you only need to create the `plugins` folder.
 8. Download the [Azion plugin zip file](https://github.com/aziontech/grafana-plugin/releases/latest) containing the plugin's assets.
 9. Copy the downloaded file to the `plugins` folder you created inside `data`.
 10. On a terminal, open the `plugins` folder > run:
