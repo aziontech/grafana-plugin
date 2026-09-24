@@ -23,7 +23,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@babel/core": "^7.16.7",
-    "@commitlint/cli": "^17.4.2",
+    "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^17.4.2",
     "@grafana/e2e": "9.2.5",
     "@grafana/e2e-selectors": "9.2.5",
