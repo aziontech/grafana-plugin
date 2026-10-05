@@ -17,17 +17,17 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
 
     - name: Install SO deps
       run: apk add curl bash
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
       with:
         node-version: '16.x'
         cache: 'yarn'
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@8492260343ad570701412c2f464a5877dc76bace # v2
       with:
         path: '**/node_modules'
         key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
@@ -38,7 +38,7 @@ jobs:
     - name: Run unit tests 
       run: yarn test:ci
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # v2.3.1
       with:
         name: coverage_unit_report
         path: coverage/lcov.info
@@ -51,13 +51,13 @@ jobs:
     container:
       image: ubuntu:18.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2.8.0
+      - uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # v2.1.1
         with:
           name: coverage_unit_report
       - name: fix code coverage paths - lcov.info
         run: sed -i 's:/__w/grafana-plugin/grafana-plugin/:/github/workspace/:' lcov.info
-      - uses: sonarsource/sonarqube-scan-action@master
+      - uses: sonarsource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}  
